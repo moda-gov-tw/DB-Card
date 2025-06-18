@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>吳勝繙 - 數位名片</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="2" fill="%23ffffff" opacity="0.1"/></svg>') repeat;
+            background-size: 50px 50px;
+            pointer-events: none;
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2), 0 0 0 1px rgba(107,114,128,0.1);
+            padding: 40px;
+            text-align: center;
+            max-width: 420px;
+            width: 90%;
+            animation: slideIn 0.6s ease-out;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #6b7280 0%, #4b5563 100%);
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .moda-logo {
+            height: 40px;
+            width: auto;
+        }
+
+        .avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #6b7280;
+            box-shadow: 0 4px 12px rgba(107,114,128,0.3);
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .name {
+            font-size: 2.2em;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #374151;
+            text-shadow: 0 1px 2px rgba(55,65,81,0.1);
+        }
+
+        .title {
+            font-size: 1.2em;
+            color: #4b5563;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        .department {
+            font-size: 1em;
+            color: #666;
+            margin-bottom: 25px;
+        }
+
+        .greeting {
+            font-size: 1.1em;
+            color: #34495e;
+            margin-bottom: 30px;
+            min-height: 50px;
+        }
+
+        .download-btn {
+            background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 1.1em;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(107,114,128,0.3);
+        }
+
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(107,114,128,0.4);
+            background: linear-gradient(135deg, #4b5563 0%, #374151 100%);
+        }
+
+        .social-links {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .social-link {
+            color: #7f8c8d;
+            font-size: 1.5em;
+            transition: color 0.3s ease;
+        }
+
+        .social-link:hover {
+            color: #6b7280;
+            transform: translateY(-1px);
+        }
+
+        @media (max-width: 480px) {
+            .card {
+                padding: 30px 20px;
+            }
+            
+            .name {
+                font-size: 1.8em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="logo-section">
+            <img src="assets/moda-logo.svg" alt="MODA Logo" class="moda-logo">
+            <img src="assets/photo.png" alt="吳勝繙" class="avatar" onerror="this.style.display='none'">
+        </div>
+        
+        <h1 class="name">吳勝繙</h1>
+        <p class="title">科長</p>
+        <p class="department">數位發展部</p>
+        
+        <div class="greeting" id="greeting">
+            歡迎認識我！
+        </div>
+        
+        <a href="wu-shengfan.vcf" download="吳勝繙.vcf" class="download-btn">
+            📱 加入聯絡人
+        </a>
+        
+        <div class="social-links">
+            <a href="mailto:iim0663418@moda.gov.tw" class="social-link" title="Email">📧</a>
+            <a href="https://www.linkedin.com/in/%E5%90%B3-%E5%8B%9D%E7%B9%99-87a45a206/" class="social-link" title="LinkedIn">💼</a>
+            <a href="https://github.com/iim0663418" class="social-link" title="GitHub">💻</a>
+        </div>
+    </div>
+
+    <script>
+        const greetings = [
+            "歡迎認識我！",
+            "很高興認識您 👋",
+            "期待與您合作 🤝"
+        ];
+
+        let currentIndex = 0;
+        const greetingElement = document.getElementById('greeting');
+
+        function typeText(text, callback) {
+            greetingElement.textContent = '';
+            let i = 0;
+            const timer = setInterval(() => {
+                greetingElement.textContent += text[i];
+                i++;
+                if (i >= text.length) {
+                    clearInterval(timer);
+                    setTimeout(callback, 2000);
+                }
+            }, 100);
+        }
+
+        function changeGreeting() {
+            typeText(greetings[currentIndex], () => {
+                currentIndex = (currentIndex + 1) % greetings.length;
+                setTimeout(changeGreeting, 1000);
+            });
+        }
+
+        // 開始動畫
+        setTimeout(changeGreeting, 1000);
+    </script>
+</body>
+</html>
