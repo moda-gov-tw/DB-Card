@@ -14,12 +14,13 @@
 
 ```
 ├── index.html              # 主網頁入口
-├── lin-chengtao.vcf        # vCard 檔案
+├── wu-shengfan.vcf         # vCard 聯絡人檔案
 ├── assets/
-│   ├── photo.png           # 大頭照
-│   └── logo.png            # 機關商標（選擇性）
-├── README.md               # 專案說明
-└── .github/workflows/      # CI 部署（未來擴充）
+│   ├── photo.png           # 個人頭像
+│   ├── moda-logo.svg       # MODA 官方標誌
+│   └── COPYRIGHT.txt       # 版權聲明文件
+├── NFC-GUIDE.md            # NFC 設定使用指南
+└── README.md               # 專案說明文件
 ```
 
 ## 🚀 部署方式
@@ -35,6 +36,22 @@
 2. **NFC 卡片**：將網址寫入 NFC 卡片，靠近手機即可開啟
 3. **QR 碼**：掃描 QR 碼開啟網頁
 4. **下載聯絡人**：點擊「加入聯絡人」按鈕下載 .vcf 檔案
+
+## 📟 NFC 設定指南
+
+### 支援規格
+- **Android**: NFC Forum Type 2-4, ISO14443 Type A/B
+- **iOS**: NFC Forum Type 2-5, ISO14443 Type A (iPhone 7+)
+- **建議晶片**: NTAG213/215/216
+- **記錄格式**: NDEF (NFC Data Exchange Format)
+
+### 快速設定
+1. 下載 NFC Tools App (Android/iOS)
+2. 選擇「寫入」→「URL」
+3. 輸入您的 GitHub Pages 網址
+4. 將 NFC 卡片靠近手機完成寫入
+
+詳細設定步驟請參考 [NFC-GUIDE.md](NFC-GUIDE.md)
 
 ## 🔧 自訂設定
 
