@@ -477,7 +477,14 @@ function initializePage() {
             // 處理頭像
             const avatar = document.getElementById('userAvatar');
             if (avatar && currentData.avatar) {
-                avatar.src = currentData.avatar;
+                // 使用 SecurityUtils 安全設置圖片來源，包含白名單驗證
+                const allowedImageOrigins = [
+                    'https://i.imgur.com', 'https://imgur.com',
+                    'https://i.postimg.cc', 'https://postimages.org', 
+                    'https://github.com', 'https://raw.githubusercontent.com',
+                    'https://drive.google.com'
+                ];
+                SecurityUtils.setSecureAttribute(avatar, 'src', currentData.avatar, allowedImageOrigins);
                 avatar.style.display = 'block';
                 avatar.onerror = function() {
                     this.style.display = 'none';
@@ -569,7 +576,7 @@ function createSocialElement(platform, url, buttonText, brandColor, displayUrl =
     ];
     
     if (typeof SecurityUtils !== 'undefined' && SecurityUtils.validateURL(url, allowedSocialOrigins)) {
-        link.href = url;
+        SecurityUtils.setSecureAttribute(link, 'href', url, allowedSocialOrigins);
     } else {
         // 如果URL不安全，使用安全的預設值或不設置href
         console.warn('Unsafe URL detected:', url);
