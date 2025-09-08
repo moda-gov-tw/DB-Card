@@ -374,7 +374,7 @@
 </head>
 <body>
     <div id="card-container" style="display: none;">
-        <div class="card">
+        <div class="card" role="main" aria-label="數位名片">
             <!-- 語言切換按鈕 -->
             <div class="language-switch">
                 <button id="langSwitch" onclick="toggleLanguage()" class="lang-btn">
@@ -386,7 +386,7 @@
             </div>
             
             <div class="avatar-section">
-                <img id="userAvatar" src="" alt="" class="avatar">
+                <img id="userAvatar" src="" alt="使用者頭像" class="avatar" role="img">
             </div>
             
             <h1 id="userName" class="name"></h1>
@@ -434,8 +434,8 @@
             
             <div id="privacyBanner" class="privacy-banner" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border: 2px solid #6968ac; border-radius: 12px; padding: 18px 22px; margin: 22px 0; font-size: 0.9em; color: #495057; line-height: 1.6; position: relative; overflow: hidden;">
                 <div style="position: absolute; top: 0; left: 0; width: 5px; height: 100%; background: #6968ac;"></div>
-                <strong style="color: #6968ac; font-weight: 700;">🔒 <span id="privacyTitle">隱私優先設計</span></strong> • <span id="projectInfo">數位發展部開源專案</span><br>
-                <span id="privacyDesc">所有個人資料僅儲存於 NFC 卡片，無後端追蹤、純前端架構、個人資訊完全自主掌控</span>
+                <strong style="color: #6968ac; font-weight: 700;">🔒 <span id="privacyTitle">隱私優先設計</span></strong> • <span id="projectInfo">數位發展部開源專案 - 內建惡意資料防護，辨認網址確認有效防禦</span><br>
+                <span id="privacyDesc">資料僅存於 NFC 卡片，無後端追蹤，完全自主掌控</span>
             </div>
             
             <div class="action-section">
@@ -520,8 +520,8 @@
                     errorTitle: '無效資料',
                     errorText: '請使用 NFC 卡片或包含資料的連結訪問。',
                     privacyTitle: '隱私優先設計',
-                    projectInfo: '數位發展部開源專案',
-                    privacyDesc: '所有個人資料僅儲存於 NFC 卡片，無後端追蹤、純前端架構、個人資訊完全自主掌控',
+                    projectInfo: '數位發展部開源專案 - 內建惡意資料防護，辨認網址確認有效防禦',
+                    privacyDesc: '資料僅存於 NFC 卡片，無後端追蹤，完全自主掌控',
                     vcardGuideTitle: '📱 如何加入聯絡人',
                     vcardGuideContent: '<p><strong>Android:</strong> 會先下載名片檔，點擊「開啟」或於通知欄中找到檔案，即可完成新增。</p><p><strong>Apple:</strong> 會自動觸發加入通訊錄，請記得不要按左上方的「完成」，要下拉到「加入聯絡人」選項。</p>'
                 },

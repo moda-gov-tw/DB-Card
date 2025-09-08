@@ -440,13 +440,13 @@
 </head>
 <body>
     <div id="card-container" style="display: none;">
-        <div class="card">
+        <div class="card" role="main" aria-label="數位名片">
             <div class="logo-section">
                 <img src="assets/moda-logo.svg" alt="moda Logo" class="moda-logo">
             </div>
             
             <div class="avatar-section">
-                <img id="user-avatar" src="" alt="" class="avatar">
+                <img id="user-avatar" src="" alt="使用者頭像" class="avatar" role="img">
             </div>
             
             <h1 id="user-name" class="name"></h1>
@@ -494,8 +494,8 @@
             
             <div class="privacy-banner" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border: 2px solid #6968ac; border-radius: 12px; padding: 18px 22px; margin: 22px 0; font-size: 0.9em; color: #495057; line-height: 1.6; position: relative; overflow: hidden;">
                 <div style="position: absolute; top: 0; left: 0; width: 5px; height: 100%; background: #6968ac;"></div>
-                <strong style="color: #6968ac; font-weight: 700;">🔒 隱私優先設計</strong> • 數位發展部開源專案<br>
-                所有個人資料僅儲存於 NFC 卡片，無後端追蹤、純前端架構、個人資訊完全自主掌控
+                <strong style="color: #6968ac; font-weight: 700;">🔒 隱私優先設計</strong> • 數位發展部開源專案 - 內建惡意資料防護，辨認網址確認有效防禦<br>
+                資料僅存於 NFC 卡片，無後端追蹤，完全自主掌控
             </div>
             
             <div class="action-section">
