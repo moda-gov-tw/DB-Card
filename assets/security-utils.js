@@ -100,6 +100,22 @@
         },
 
         /**
+         * Google Drive 主機名驗證
+         * @param {string} url - 待驗證的URL
+         * @returns {boolean} 是否為 Google Drive 主機
+         */
+        isGoogleDriveHostname: function(url) {
+            try {
+                const urlObj = new URL(url);
+                return urlObj.hostname === 'drive.google.com' || 
+                       urlObj.hostname === 'docs.google.com';
+            } catch (e) {
+                this.logSecurityEvent('isGoogleDriveHostname', 'URL parsing failed', { url, error: e.message });
+                return false;
+            }
+        },
+
+        /**
          * URL驗證 - 驗證URL安全性
          * @param {string} url - 待驗證的URL
          * @param {Array} allowedOrigins - 允許的來源白名單（可選，用於防止 Open Redirect）

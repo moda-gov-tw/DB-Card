@@ -1,0 +1,319 @@
+Code scanning
+ All tools are working as expected
+ 
+is:open branch:main 
+
+
+Client-side cross-site scripting
+High
+#32 opened 3 hours ago • Detected by CodeQL in index1.html :670
+main
+index1.html:670 
+            
+            // 聯絡資訊
+            const emailLink = document.getElementById('user-email');
+            emailLink.href = data.socialLinks.email;
+Cross-site scripting vulnerability due to .
+CodeQL 
+            emailLink.textContent = data.email;
+            
+            // 電話（可選）
+Rule
+Tool
+CodeQL
+Rule ID
+js/xss
+Query
+View source
+Description
+Directly writing user input (for example, a URL query parameter) to a webpage without properly sanitizing the input first, allows for a cross-site scripting vulnerability.
+
+Client-side cross-site scripting
+High
+#31 opened 3 hours ago • Detected by CodeQL in index1.html :666
+main
+
+Client-side cross-site scripting
+High
+#30 opened 3 hours ago • Detected by CodeQL in index1.html :632
+main
+
+Client-side cross-site scripting
+High
+#29 opened 3 hours ago • Detected by CodeQL in index1.html :618
+main
+
+Client-side cross-site scripting
+High
+#28 opened 3 hours ago • Detected by CodeQL in index1-en.html :700
+main
+
+Client-side cross-site scripting
+High
+#27 opened 3 hours ago • Detected by CodeQL in index1-en.html :696
+main
+
+Client-side cross-site scripting
+High
+#26 opened 3 hours ago • Detected by CodeQL in index1-en.html :669
+main
+
+Client-side cross-site scripting
+High
+#25 opened 3 hours ago • Detected by CodeQL in index1-en.html :657
+main
+
+Client-side cross-site scripting
+High
+#24 opened 3 hours ago • Detected by CodeQL in index1-bilingual.html :564
+main
+
+Client-side cross-site scripting
+High
+#23 opened 3 hours ago • Detected by CodeQL in index.html :675
+main
+
+Client-side cross-site scripting
+High
+#22 opened 3 hours ago • Detected by CodeQL in index.html :671
+main
+
+Client-side cross-site scripting
+High
+#21 opened 3 hours ago • Detected by CodeQL in index.html :637
+main
+
+Client-side cross-site scripting
+High
+#20 opened 3 hours ago • Detected by CodeQL in index.html :623
+main
+
+Client-side cross-site scripting
+High
+#19 opened 3 hours ago • Detected by CodeQL in assets/bilingual-common.js :480
+main
+
+Client-side cross-site scripting
+High
+#18 opened 3 hours ago • Detected by CodeQL in index-en.html :700
+main
+
+Client-side cross-site scripting
+High
+#17 opened 3 hours ago • Detected by CodeQL in index-en.html :696
+main
+
+Client-side cross-site scripting
+High
+#16 opened 3 hours ago • Detected by CodeQL in index-en.html :669
+main
+
+Client-side cross-site scripting
+High
+#15 opened 3 hours ago • Detected by CodeQL in index-en.html :657
+main
+
+Incomplete URL substring sanitization
+High
+#11 opened 3 hours ago • Detected by CodeQL in index1.html :614
+main
+
+Incomplete URL substring sanitization
+High
+#10 opened 3 hours ago • Detected by CodeQL in index1-en.html :653
+main
+
+Incomplete URL substring sanitization
+High
+#9 opened 3 hours ago • Detected by CodeQL in index.html :619
+main
+
+Incomplete URL substring sanitization
+High
+#8 opened 3 hours ago • Detected by CodeQL in index-en.html :653
+main
+
+Client-side URL redirect
+Medium
+#66 opened 3 hours ago • Detected by CodeQL in index1.html :688
+main
+
+Client-side URL redirect
+Medium
+#65 opened 3 hours ago • Detected by CodeQL in index1.html :677
+main
+
+Client-side URL redirect
+Medium
+#64 opened 3 hours ago • Detected by CodeQL in index1.html :670
+main
+
+Client-side URL redirect
+Medium
+#63 opened 3 hours ago • Detected by CodeQL in index1.html :666
+main
+
+Client-side URL redirect
+Medium
+#62 opened 3 hours ago • Detected by CodeQL in index1.html :618
+main
+
+Client-side URL redirect
+Medium
+#61 opened 3 hours ago • Detected by CodeQL in index1-en.html :718
+main
+
+Client-side URL redirect
+Medium
+#60 opened 3 hours ago • Detected by CodeQL in index1-en.html :707
+main
+
+Client-side URL redirect
+Medium
+#59 opened 3 hours ago • Detected by CodeQL in index1-en.html :700
+main
+
+Client-side URL redirect
+Medium
+#58 opened 3 hours ago • Detected by CodeQL in index1-en.html :696
+main
+
+Client-side URL redirect
+Medium
+#57 opened 3 hours ago • Detected by CodeQL in index1-en.html :657
+main
+
+Client-side URL redirect
+Medium
+#56 opened 3 hours ago • Detected by CodeQL in index1-bilingual.html :564
+main
+
+Client-side URL redirect
+Medium
+#55 opened 3 hours ago • Detected by CodeQL in index.html :693
+main
+
+Client-side URL redirect
+Medium
+#54 opened 3 hours ago • Detected by CodeQL in index.html :682
+main
+
+Client-side URL redirect
+Medium
+#53 opened 3 hours ago • Detected by CodeQL in index.html :675
+main
+
+Client-side URL redirect
+Medium
+#52 opened 3 hours ago • Detected by CodeQL in index.html :671
+main
+
+Client-side URL redirect
+Medium
+#51 opened 3 hours ago • Detected by CodeQL in index.html :623
+main
+
+Client-side URL redirect
+Medium
+#50 opened 3 hours ago • Detected by CodeQL in assets/bilingual-common.js :572
+main
+
+Client-side URL redirect
+Medium
+#49 opened 3 hours ago • Detected by CodeQL in assets/bilingual-common.js :480
+main
+
+Client-side URL redirect
+Medium
+#48 opened 3 hours ago • Detected by CodeQL in index-personal.html :652
+main
+
+Client-side URL redirect
+Medium
+#47 opened 3 hours ago • Detected by CodeQL in index-personal.html :642
+main
+
+Client-side URL redirect
+Medium
+#46 opened 3 hours ago • Detected by CodeQL in index-personal.html :636
+main
+
+Client-side URL redirect
+Medium
+#45 opened 3 hours ago • Detected by CodeQL in index-personal.html :632
+main
+
+Client-side URL redirect
+Medium
+#44 opened 3 hours ago • Detected by CodeQL in index-personal-en.html :652
+main
+
+Client-side URL redirect
+Medium
+#43 opened 3 hours ago • Detected by CodeQL in index-personal-en.html :642
+main
+
+Client-side URL redirect
+Medium
+#42 opened 3 hours ago • Detected by CodeQL in index-personal-en.html :636
+main
+
+Client-side URL redirect
+Medium
+#41 opened 3 hours ago • Detected by CodeQL in index-personal-en.html :632
+main
+
+Client-side URL redirect
+Medium
+#40 opened 3 hours ago • Detected by CodeQL in assets/bilingual-common.js :241
+main
+
+Client-side URL redirect
+Medium
+#39 opened 3 hours ago • Detected by CodeQL in assets/bilingual-common.js :228
+main
+
+Client-side URL redirect
+Medium
+#38 opened 3 hours ago • Detected by CodeQL in index-en.html :718
+main
+
+Client-side URL redirect
+Medium
+#37 opened 3 hours ago • Detected by CodeQL in index-en.html :707
+main
+
+Client-side URL redirect
+Medium
+#36 opened 3 hours ago • Detected by CodeQL in index-en.html :700
+main
+
+Client-side URL redirect
+Medium
+#35 opened 3 hours ago • Detected by CodeQL in index-en.html :696
+main
+
+Client-side URL redirect
+Medium
+#34 opened 3 hours ago • Detected by CodeQL in index-en.html :657
+main
+index-en.html:657 
+                        const googleDriveDirectUrl = convertGoogleDriveUrl(data.avatar);
+                        if (googleDriveDirectUrl) {
+                            console.log('Trying Google Drive direct URL:', googleDriveDirectUrl);
+                            this.src = googleDriveDirectUrl;
+Untrusted URL redirection depends on a .
+Untrusted URL redirection depends on a .
+CodeQL 
+                            retryCount++;
+                            return;
+                        }
+Rule
+Tool
+CodeQL
+Rule ID
+js/client-side-unvalidated-url-redirection
+Query
+View source
+Description
+Redirecting to a URL that is constructed from parts of the DOM that may be controlled by an attacker can facilitate phishing attacks. In these attacks, unsuspecting users can be redirected to a malicious site that looks very similar to the real site they intend to visit, but which is controlled by the attacker.

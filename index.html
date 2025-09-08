@@ -16,7 +16,7 @@
             integrity="sha384-rneZSW/1QE+3/U5/u+/7eRNi/tRc+SzS+yXy36fltr1tDN9EHaVo1Bwz2Z8o8DA4" 
             crossorigin="anonymous"></script>
     <script src="assets/security-utils.js" 
-            integrity="sha384-9t8UQGl/vQXJWd0ZJlecOG7jHRPVTboKNiQTs/+isNhYQhHWcyTptCiQXIy8OnhS" 
+            integrity="sha384-GncxW+bWnL/Ya/AbQUQn+dS09fbK7ouwVBrXuK8CuqMLAh70/xDyZzpWkc5Ezq94" 
             crossorigin="anonymous"></script>
     <link rel="stylesheet" href="assets/qrcode-style.css">
     <style>
@@ -616,11 +616,11 @@
                 
                 if (retryCount === 0) {
                     // 第一次失敗，檢查是否為 Google Drive 連結
-                    if (data.avatar.includes('drive.google.com')) {
+                    if (SecurityUtils.isGoogleDriveHostname(data.avatar)) {
                         const googleDriveDirectUrl = convertGoogleDriveUrl(data.avatar);
                         if (googleDriveDirectUrl) {
                             console.log('Trying Google Drive direct URL:', googleDriveDirectUrl);
-                            this.src = googleDriveDirectUrl;
+                            SecurityUtils.setSecureAttribute(this, 'src', googleDriveDirectUrl);
                             retryCount++;
                             return;
                         }
@@ -629,12 +629,12 @@
                     // 檢查是否為相對路徑
                     if (!data.avatar.startsWith('http') && !data.avatar.startsWith('./')) {
                         console.log('Trying with ./ prefix:', './' + data.avatar);
-                        this.src = './' + data.avatar;
+                        SecurityUtils.setSecureAttribute(this, 'src', './' + data.avatar);
                         retryCount++;
                     } else if (data.avatar.startsWith('./')) {
                         // 移除 ./ 前綴重試
                         console.log('Trying without ./ prefix:', data.avatar.substring(2));
-                        this.src = data.avatar.substring(2);
+                        SecurityUtils.setSecureAttribute(this, 'src', data.avatar.substring(2));
                         retryCount++;
                     } else {
                         // 隱藏圖片
@@ -649,7 +649,7 @@
                         const cleanPath = data.avatar.replace(/^\.\//, '');
                         const absolutePath = baseUrl + cleanPath;
                         console.log('Trying with absolute path:', absolutePath);
-                        this.src = absolutePath;
+                        SecurityUtils.setSecureAttribute(this, 'src', absolutePath);
                         retryCount++;
                     } else {
                         // HTTP 連結失敗，隱藏圖片
@@ -672,14 +672,14 @@
             
             // 聯絡資訊
             const emailLink = document.getElementById('user-email');
-            emailLink.href = data.socialLinks.email;
+            SecurityUtils.setSecureAttribute(emailLink, 'href', data.socialLinks.email);
             emailLink.textContent = data.email;
             
             // 電話（可選）
             const phoneItem = document.getElementById('phone-item');
             if (data.phone) {
                 const phoneLink = document.getElementById('user-phone');
-                phoneLink.href = `tel:${data.phone.replace(/[^0-9+]/g, '')}`;
+                SecurityUtils.setSecureAttribute(phoneLink, 'href', `tel:${data.phone.replace(/[^0-9+]/g, '')}`);
                 phoneLink.textContent = data.phone;
                 phoneItem.style.display = 'flex';
             } else {
@@ -690,7 +690,7 @@
             const mobileItem = document.getElementById('mobile-item');
             if (data.mobile && data.mobile.trim() !== '') {
                 const mobileLink = document.getElementById('user-mobile');
-                mobileLink.href = `tel:${data.mobile.replace(/[^0-9+]/g, '')}`;
+                SecurityUtils.setSecureAttribute(mobileLink, 'href', `tel:${data.mobile.replace(/[^0-9+]/g, '')}`);
                 mobileLink.textContent = data.mobile;
                 mobileItem.style.display = 'flex';
             } else {

@@ -1,83 +1,97 @@
 Data collection is disabled.
-好的，這是一份針對您提交的變更所做的嚴格代碼審查。
+好的，我將扮演嚴格代碼審查者的角色。
 
-### 1) 嚴重性評級與理由
+由於沒有具體的程式碼變更可供審查，我將根據您提供的檔案上下文（特別是 `弱點修補任務清單.md` 和 `弱點修補技術架構.md`）以及專案結構，推斷出一個潛在且關鍵的風險點進行審查。
 
-**嚴重性：** 低 (Low)
+我將聚焦於客戶端 HTML 檔案中常見的跨網站指令碼（XSS）漏洞，這通常是此類專案的最高風險之一。我假設修補任務涉及對動態內容（例如從 URL 參數讀取的內容）的淨化處理。
 
-**理由：**
-此變更本身是**正面**的安全性重構，並非引入新風險。它修復了兩個潛在的**高嚴重性 (High)**漏洞：
-1.  **跨網站指令碼 (XSS)**：用業界標準的 `DOMPurify` 取代了自製、脆弱且容易被繞過的正規表示式 HTML 清理器。自製的清理器是典型的反模式，難以涵蓋所有攻擊向量。
-2.  **開放重定向 (Open Redirect)**：在 `validateURL` 中增加了基於來源白名單的驗證，有效防禦了 CWE-601 風險，防止使用者被導向惡意網站。
+---
 
-由於此變更是修補而非引入問題，因此變更本身的風險評為「低」，但它解決的問題是「高」風險等級。
+### **代碼審查報告**
 
-### 2) 受影響檔案與風險來源
+#### **1) 嚴重性評級與理由**
 
-*   **受影響檔案：** `assets/security-utils.js`
-*   **風險來源分析 (原始代碼)：**
-    *   **資安 (Security)：**
-        *   原始的 `sanitizeHTML` 函式使用正規表示式進行黑名單過濾，這種方法極易被繞過（例如：使用大小寫變形、編碼字元、未考慮的標籤屬性等），存在嚴重的 XSS 風險。
-        *   原始的 `validateURL` 函式未檢查 URL 的來源 (origin)，允許將使用者重定向到任何外部網站，構成開放重定向漏洞。
-    *   **異味 (Code Smell)：** 原始的 `sanitizeHTML` 函式是典型的「重新發明輪子」(Reinventing the Wheel) 異味，特別是在安全性這種需要專業知識的領域。
-    *   **相依性 (Dependency)：** 新的實作引入了對 `DOMPurify` 的硬性依賴。雖然程式碼中有備援機制，但若 `DOMPurify` 未能成功載入，安全等級會顯著下降。
+*   **High (高)**
+*   **理由**: 專案中的多個 HTML 檔案疑似直接將從 URL 參數獲取的未淨化資料動態寫入 DOM，極易受到反射型 XSS 攻擊。攻擊者可構造惡意連結，在使用者瀏覽器中執行任意腳本，可能導致會話劫持、釣魚攻擊或植入惡意軟體。此風險直接威脅使用者安全與資料完整性。
 
-### 3) 修復建議與驗證步驟
+#### **2) 受影響檔案與風險來源**
 
-**修復建議：**
-此變更方向正確，應予以採納。這是一次出色的安全性強化。以下是為了確保變更完整性的建議，**不需修改程式碼**，而是作為後續的驗證與補強步驟：
+*   **風險來源**: 資安 (Security)
+*   **受影響檔案**:
+    *   `index.html`
+    *   `index-bilingual.html`
+    *   `index-personal.html`
+    *   (以及其他所有從 URL 動態生成 vCard 或 QR Code 的相關 HTML 檔案)
+*   **詳細說明**: 這些檔案中的 JavaScript 程式碼透過 `URLSearchParams` 讀取查詢參數（如 `name`, `tel`, `email` 等），並可能在未經嚴格過濾的情況下，使用 `.innerHTML` 或類似方法將其呈現在頁面上。這是典型的 XSS 漏洞（CWE-79）。
 
-1.  **確認相依性載入順序：** 確保在所有使用到 `security-utils.js` 的 HTML 頁面中，`dompurify.min.js` 腳本**必定**在 `security-utils.js` 之前被載入。
-2.  **強化備援機制日誌：** 在 `sanitizeHTML` 的 `else` 區塊（DOMPurify 未定義時），目前的日誌 `this.logSecurityEvent(...)` 很好，但可以考慮增加一個更醒目的控制台錯誤 `console.error`，以確保開發者在開發環境中能立即注意到這個嚴重的降級情況。
+#### **3) 修復建議與驗證步驟**
 
-**Patch 建議 (僅供參考，強化日誌)：**
+**修復建議 (最小變更原則)**
+
+我建議在將任何外部輸入（特別是 URL 參數）插入 DOM 之前，強制使用 `DOMPurify` 進行淨化。專案中已包含 `dompurify.min.js`，應充分利用。
+
+以下是一個針對性的修復範例，假設原始程式碼如下：
+
+```javascript
+// Vulnerable Code
+const params = new URLSearchParams(window.location.search);
+const name = params.get('name');
+document.getElementById('name-display').innerHTML = name; // XSS vulnerability here
+```
+
+建議修復為：
+
 ```diff
---- a/assets/security-utils.js
-+++ b/assets/security-utils.js
-@@ -93,6 +93,7 @@
-             } else {
-                 // 降級到基礎 HTML 實體編碼（如果 DOMPurify 未載入）
-                 this.logSecurityEvent('sanitizeHTML', 'DOMPurify not available, using fallback', { html: html.substring(0, 50) });
-+                console.error('[CRITICAL] DOMPurify library not loaded. Falling back to basic sanitization. XSS risk increased.');
-                 return this.sanitizeInput(html, 'text');
-             }
-         },
+--- a/index.html
++++ b/index.html
+@@ -100,4 +100,4 @@
+ const params = new URLSearchParams(window.location.search);
+ const name = params.get('name');
+-document.getElementById('name-display').innerHTML = name;
++document.getElementById('name-display').textContent = name; // Use textContent for simple text
++// OR if HTML is needed:
++// document.getElementById('name-display').innerHTML = DOMPurify.sanitize(name);
 
 ```
 
-**驗證步驟：**
-1.  **單元測試：** 擴充 `tests/test-dompurify-integration.html` 或 `tests/test-security-comprehensive.html`，加入以下針對 `SecurityUtils.sanitizeHTML` 的測試案例：
-    *   **惡意 Payload：** `<img src=x onerror=alert(1)>`, `<svg/onload=alert(1)>`, `<a href="javascript:alert(1)">Click</a>`。預期結果：所有惡意程式碼被移除。
-    *   **保留內容：** `<b>bold</b> and <i>italic</i> with <a href="https://example.com">link</a>`。預期結果：標籤和內容被正確保留。
-2.  **開放重定向測試：** 建立測試案例，呼叫 `SecurityUtils.setSecureAttribute` 設定一個 `<a>` 標籤的 `href`：
-    *   使用惡意 URL `https://evil.com`，且 `allowedOrigins` 未包含 `https://evil.com`。預期結果：`href` 屬性被設定為安全預設值（例如 `#`）。
-    *   使用合法的跨域 URL `https://trusted.com`，並將其加入 `allowedOrigins`。預期結果：`href` 被成功設定。
-3.  **相依性失敗測試：** 暫時在測試頁面中移除 `dompurify.min.js` 的載入，確認 `sanitizeHTML` 會觸發備援機制，並在控制台看到對應的警告/錯誤訊息。
+**通用修復原則**:
+1.  對於不需要呈現 HTML 標籤的內容，一律使用 `.textContent` 而非 `.innerHTML`。這是最簡單且最安全的防禦。
+2.  若內容必須包含 HTML（例如，URL 參數中包含需呈現的換行 ` <br> `），則必須使用 `DOMPurify.sanitize()` 進行處理。
+3.  在 `assets/security-utils.js` 中建立一個輔助函數，封裝淨化邏輯，以確保所有開發人員都能一致地調用。
 
-### 4) 《Security》安全分析
+```javascript
+// In assets/security-utils.js
+function sanitizeInput(input) {
+  if (typeof input !== 'string') return '';
+  return DOMPurify.sanitize(input);
+}
+```
 
-*   **輸入驗證 (Input Validation)：** **顯著增強**。從脆弱的自訂邏輯升級為經過嚴格測試的 `DOMPurify` 函式庫，大幅提升了對 HTML 輸入的驗證與清理能力。
-*   **AuthN/AuthZ：** 不適用。
-*   **Secrets：** 不適用。
-*   **XSS/SQLi/SSRF：**
-    *   **XSS：** **主要改進點**。此變更的核心是將一個高度易受攻擊的自訂清理器替換為強大的 XSS 防禦標準庫，極大降低了儲存型和反射型 XSS 的風險。
-    *   **開放重定向 (Open Redirect)：** **已修復**。透過在 `validateURL` 中實作來源白名單檢查，有效封堵了此類漏洞。
-*   **相依性風險 (Dependency Risk)：** **已引入**。程式碼現在依賴 `DOMPurify`。雖然有備援處理，但這是一個需要管理的依賴關係。確保函式庫的完整性（SRI, Subresource Integrity）和可用性至關重要。
+**驗證步驟**:
+1.  **單元測試**: 開啟 `tests/test-dompurify-integration.html` 或 `tests/test-security-comprehensive.html`。
+2.  **手動驗證**: 在瀏覽器中開啟任一受影響的 HTML 檔案，並在 URL 後附加惡意腳本作為參數，例如：
+    `.../index.html?name=<img src=x onerror=alert('XSS')>`
+3.  **預期結果**:
+    *   **修復前**: 瀏覽器會彈出一個包含 "XSS" 字樣的警告框。
+    *   **修復後**: 警告框不應出現。頁面上應顯示無害的純文字 ` <img src=x> ` 或完全不顯示該圖片標籤。
 
-### 5) 《Accessibility》無障礙分析
+#### **4) Security**
 
-*   **WAI-ARIA / 語意標籤 (Semantic Tags)：** **正面影響**。舊的清理器會移除所有 `<a>` 標籤，而新實作在安全的前提下允許了 `<a>` 標籤。這對於提供上下文連結（例如「了解更多」）至關重要，能改善螢幕報讀器使用者的體驗。保留 `<strong>`, `<em>` 等語意標籤也有助於傳達語氣。
-*   **鍵盤導航 (Keyboard Navigation)：** **正面影響**。允許 `<a>` 標籤的存在，使得內容中的連結可以透過鍵盤（如 Tab 鍵）進行聚焦和操作，改善了鍵盤使用者的可及性。
-*   **對比度 / 焦點順序 / 螢幕報讀 (Contrast / Focus Order / Screen Reader)：** 整體為中性至正面。此變更本身不影響視覺呈現，但透過保留更豐富的語意結構，為螢幕報讀器提供了更好的朗讀體驗。
+此變更直接解決了 CWE-79（不當的中和輸入於網頁生成）。透過確保所有使用者提供的內容在寫入 DOM 前都經過淨化，可以有效防禦反射型 XSS 攻擊，顯著提升應用程式的安全性。
 
-### 6) 建議提交訊息 (Commit Message)
+#### **5) Accessibility**
+
+此修復對可及性（Accessibility）沒有負面影響。若惡意腳本被執行，反而可能透過 DOM 操作破壞頁面結構，降低可及性。因此，防禦 XSS 有助於維持一個穩定、可預測的無障礙網頁環境。
+
+#### **6) 建議提交訊息**
 
 ```
-security(utils): replace custom sanitizer and add open redirect defense
+feat(security): Sanitize URL parameters to prevent XSS
 
-Replaced the fragile, custom regex-based HTML sanitizer in `sanitizeHTML` with the industry-standard DOMPurify library. This provides robust protection against XSS vulnerabilities that the previous implementation was susceptible to.
+Refactor dynamic content rendering to mitigate reflected Cross-Site Scripting (XSS) vulnerabilities. All data retrieved from URL search parameters is now processed before being inserted into the DOM.
 
-Additionally, implemented an origin-based allowlist check in `validateURL` to mitigate Open Redirect (CWE-601) vulnerabilities. This check is integrated into `setSecureAttribute` to prevent redirection to untrusted domains.
+- Use `textContent` instead of `innerHTML` for inserting plain text content.
+- Apply `DOMPurify.sanitize()` for any input that may legitimately contain HTML markup.
 
-Finally, enhanced `logSecurityEvent` to include call stack information, improving debuggability for security-related events.
+This change hardens the application against malicious link attacks, protecting user data and session integrity.
 ```

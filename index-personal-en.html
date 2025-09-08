@@ -633,13 +633,13 @@
             
             // Contact information
             const emailLink = document.getElementById('user-email');
-            emailLink.href = data.socialLinks.email;
+            SecurityUtils.setSecureAttribute(emailLink, 'href', data.socialLinks.email);
             emailLink.textContent = data.email;
             
             const phoneItem = document.getElementById('phone-item');
             if (data.phone) {
                 const phoneLink = document.getElementById('user-phone');
-                phoneLink.href = `tel:${data.phone.replace(/[^0-9+]/g, '')}`;
+                SecurityUtils.setSecureAttribute(phoneLink, 'href', `tel:${data.phone.replace(/[^0-9+]/g, '')}`;
                 phoneLink.textContent = data.phone;
                 phoneItem.style.display = 'flex';
             } else {
@@ -649,7 +649,7 @@
             const mobileItem = document.getElementById('mobile-item');
             if (data.mobile && data.mobile.trim() !== '') {
                 const mobileLink = document.getElementById('user-mobile');
-                mobileLink.href = `tel:${data.mobile.replace(/[^0-9+]/g, '')}`;
+                SecurityUtils.setSecureAttribute(mobileLink, 'href', `tel:${data.mobile.replace(/[^0-9+]/g, '')}`;
                 mobileLink.textContent = data.mobile;
                 mobileItem.style.display = 'flex';
             } else {

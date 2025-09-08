@@ -650,11 +650,11 @@
                 console.error('Avatar load failed:', this.src, 'Retry count:', retryCount);
                 
                 if (retryCount === 0) {
-                    if (data.avatar.includes('drive.google.com')) {
+                    if (SecurityUtils.isGoogleDriveHostname(data.avatar)) {
                         const googleDriveDirectUrl = convertGoogleDriveUrl(data.avatar);
                         if (googleDriveDirectUrl) {
                             console.log('Trying Google Drive direct URL:', googleDriveDirectUrl);
-                            this.src = googleDriveDirectUrl;
+                            SecurityUtils.setSecureAttribute(this, 'src', googleDriveDirectUrl);
                             retryCount++;
                             return;
                         }
@@ -662,11 +662,11 @@
                     
                     if (!data.avatar.startsWith('http') && !data.avatar.startsWith('./')) {
                         console.log('Trying with ./ prefix:', './' + data.avatar);
-                        this.src = './' + data.avatar;
+                        SecurityUtils.setSecureAttribute(this, 'src', './' + data.avatar);
                         retryCount++;
                     } else if (data.avatar.startsWith('./')) {
                         console.log('Trying without ./ prefix:', data.avatar.substring(2));
-                        this.src = data.avatar.substring(2);
+                        SecurityUtils.setSecureAttribute(this, 'src', data.avatar.substring(2));
                         retryCount++;
                     } else {
                         console.log('Cannot resolve avatar path, hiding avatar');
@@ -679,7 +679,7 @@
                         const cleanPath = data.avatar.replace(/^\.\//, '');
                         const absolutePath = baseUrl + cleanPath;
                         console.log('Trying with absolute path:', absolutePath);
-                        this.src = absolutePath;
+                        SecurityUtils.setSecureAttribute(this, 'src', absolutePath);
                         retryCount++;
                     } else {
                         console.log('HTTP avatar loading failed, hiding avatar');
@@ -697,14 +697,14 @@
             
             // 聯絡資訊
             const emailLink = document.getElementById('user-email');
-            emailLink.href = data.socialLinks.email;
+            SecurityUtils.setSecureAttribute(emailLink, 'href', data.socialLinks.email);
             emailLink.textContent = data.email;
             
             // 電話
             const phoneItem = document.getElementById('phone-item');
             if (data.phone) {
                 const phoneLink = document.getElementById('user-phone');
-                phoneLink.href = `tel:${data.phone.replace(/[^0-9+]/g, '')}`;
+                SecurityUtils.setSecureAttribute(phoneLink, 'href', `tel:${data.phone.replace(/[^0-9+]/g, '')}`;
                 phoneLink.textContent = data.phone;
                 phoneItem.style.display = 'flex';
             } else {
@@ -715,7 +715,7 @@
             const mobileItem = document.getElementById('mobile-item');
             if (data.mobile && data.mobile.trim() !== '') {
                 const mobileLink = document.getElementById('user-mobile');
-                mobileLink.href = `tel:${data.mobile.replace(/[^0-9+]/g, '')}`;
+                SecurityUtils.setSecureAttribute(mobileLink, 'href', `tel:${data.mobile.replace(/[^0-9+]/g, '')}`;
                 mobileLink.textContent = data.mobile;
                 mobileItem.style.display = 'flex';
             } else {
