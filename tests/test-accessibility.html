@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accessibility 修補驗證</title>
+    <script src="../assets/security-utils.js"></script>
+    <script src="../assets/bilingual-common.js"></script>
+</head>
+<body>
+    <h1>Accessibility 修補驗證測試</h1>
+    <div id="test-container"></div>
+    <div id="test-results"></div>
+
+    <script>
+        function testAccessibilityFix() {
+            const results = [];
+            const container = document.getElementById('test-container');
+            
+            // 測試1: 安全URL - 應該正常顯示
+            const safeLink = createSocialElement('LinkedIn', 'https://linkedin.com/in/test', 'LinkedIn', '#0077b5');
+            container.appendChild(safeLink);
+            
+            const safeLinkElement = safeLink.querySelector('a');
+            results.push({
+                test: '安全URL連結',
+                pass: safeLinkElement.href === 'https://linkedin.com/in/test' && !safeLinkElement.hasAttribute('aria-disabled'),
+                details: `href: ${safeLinkElement.href}, aria-disabled: ${safeLinkElement.getAttribute('aria-disabled')}`
+            });
+            
+            // 測試2: 不安全URL - 應該被禁用
+            const unsafeLink = createSocialElement('Malicious', 'javascript:alert("hack")', 'Malicious', '#ff0000');
+            container.appendChild(unsafeLink);
+            
+            const unsafeLinkElement = unsafeLink.querySelector('a');
+            const hasNoHref = !unsafeLinkElement.hasAttribute('href');
+            const hasAriaDisabled = unsafeLinkElement.getAttribute('aria-disabled') === 'true';
+            const hasRole = unsafeLinkElement.getAttribute('role') === 'link';
+            const isVisuallyDisabled = unsafeLinkElement.style.opacity === '0.5';
+            const noPointerEvents = unsafeLinkElement.style.pointerEvents === 'none';
+            
+            results.push({
+                test: '不安全URL連結禁用',
+                pass: hasNoHref && hasAriaDisabled && hasRole && isVisuallyDisabled && noPointerEvents,
+                details: `無href: ${hasNoHref}, aria-disabled: ${hasAriaDisabled}, role: ${hasRole}, 視覺禁用: ${isVisuallyDisabled}, 無指標事件: ${noPointerEvents}`
+            });
+            
+            // 測試3: 鍵盤導航測試
+            const focusableElements = container.querySelectorAll('a:not([aria-disabled="true"])');
+            results.push({
+                test: '鍵盤導航 - 禁用連結不可聚焦',
+                pass: focusableElements.length === 1, // 只有安全連結可聚焦
+                details: `可聚焦連結數量: ${focusableElements.length} (預期: 1)`
+            });
+            
+            // 顯示結果
+            const resultsDiv = document.getElementById('test-results');
+            const passCount = results.filter(r => r.pass).length;
+            
+            resultsDiv.innerHTML = `
+                <h2>Accessibility測試結果: ${passCount}/${results.length} 通過</h2>
+                ${results.map(result => `
+                    <div style="margin: 10px 0; padding: 10px; border: 1px solid ${result.pass ? 'green' : 'red'};">
+                        <h3>${result.test}: ${result.pass ? '✅ PASS' : '❌ FAIL'}</h3>
+                        <p>${result.details}</p>
+                    </div>
+                `).join('')}
+                
+                <h3>視覺檢查:</h3>
+                <p>上方應顯示一個正常的LinkedIn連結和一個灰色禁用的Malicious連結</p>
+            `;
+        }
+        
+        // 執行測試
+        testAccessibilityFix();
+    </script>
+</body>
+</html>

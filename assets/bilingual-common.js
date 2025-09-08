@@ -532,11 +532,23 @@ function createSocialElement(platform, url, buttonText, brandColor, displayUrl =
     label.textContent = platform + (displayUrl ? `: ${displayUrl}` : '');
     
     const link = document.createElement('a');
-    link.href = url;
     link.target = '_blank';
     link.className = 'social-link';
     link.style.cssText = `background: ${brandColor}; color: white; padding: 4px 12px; border-radius: 16px; text-decoration: none; font-size: 0.85em; font-weight: 500;`;
     link.textContent = buttonText;
+    
+    // 安全URL驗證 - 修補Open Redirect弱點
+    if (typeof SecurityUtils !== 'undefined' && SecurityUtils.validateURL(url)) {
+        link.href = url;
+    } else {
+        // 如果URL不安全，使用安全的預設值或不設置href
+        console.warn('Unsafe URL detected:', url);
+        link.removeAttribute('href');
+        link.setAttribute('role', 'link'); // 保持語意，但告知輔助技術它可能無法操作
+        link.setAttribute('aria-disabled', 'true');
+        link.style.pointerEvents = 'none'; // 視覺上禁用滑鼠點擊
+        link.style.opacity = '0.5'; // 視覺上呈現禁用狀態
+    }
     
     container.appendChild(label);
     container.appendChild(link);

@@ -1,0 +1,38 @@
+## 📋 中風險以上弱點清單
+
+### 1. Critical（嚴重風險，共 30 項）
+
+**類別**：《A03 Injection → Cross-Site Scripting: DOM (XSS)》
+
+* **弱點模式**：
+
+  * 從 `window.location.search` / `URLSearchParams` 讀取未驗證參數。
+  * 將資料直接指派到 DOM 元素屬性或 `innerHTML`。
+
+* **受影響檔案與行號**：
+
+  * `index-en.html` (691, 695, 702, 713, 746)
+  * `index-personal-en.html` (627, 631, 637, 647, 690)
+  * `index-personal.html` (627, 631, 637, 647, 690)
+  * `index.html` (661, 665, 672, 683, 722)
+  * `index1-en.html` (691, 695, 702, 713, 746)
+  * `index1.html` (661, 665, 672, 683, 722)
+
+* **潛在影響**：
+  攻擊者可透過惡意 URL 注入 JavaScript/HTML，竊取 Cookie、Session，進行釣魚或帳號接管。
+
+---
+
+### 2. High（高風險，共 1 項）
+
+**類別**：《A01 Broken Access Control → Open Redirect》
+
+* **位置**：`assets/bilingual-common.js:535`
+* **弱點描述**：不受信任的輸入直接被指定到 `link.href`，造成任意導向。
+* **潛在影響**：可能被利用於釣魚或惡意站點跳轉。
+
+---
+
+### 3. Medium（中風險，共 0 項）
+
+* **檢測結果**：本專案未發現任何 Medium 弱點。

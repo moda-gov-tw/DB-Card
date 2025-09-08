@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>安全監控機制測試</title>
+    <script src="../assets/security-utils.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .pass { color: green; font-weight: bold; }
+        .fail { color: red; font-weight: bold; }
+        .log-entry { 
+            background: #f5f5f5; 
+            padding: 8px; 
+            margin: 4px 0; 
+            border-left: 3px solid #007cba; 
+            font-family: monospace; 
+            font-size: 0.9em;
+        }
+        button { 
+            background: #007cba; 
+            color: white; 
+            border: none; 
+            padding: 8px 16px; 
+            margin: 4px; 
+            border-radius: 4px; 
+            cursor: pointer; 
+        }
+        button:hover { background: #005a87; }
+    </style>
+</head>
+<body>
+    <h1>🔍 安全監控機制測試</h1>
+    
+    <div class="test-section">
+        <h2>1. 錯誤處理測試</h2>
+        <button onclick="testErrorHandling()">觸發錯誤處理測試</button>
+        <div id="error-test-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>2. 安全日誌記錄</h2>
+        <button onclick="testSecurityLogging()">觸發安全事件</button>
+        <button onclick="displayLogs()">顯示安全日誌</button>
+        <button onclick="clearLogs()">清除日誌</button>
+        <div id="logs-display"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>3. 監控功能驗證</h2>
+        <button onclick="runMonitoringTests()">執行監控測試</button>
+        <div id="monitoring-result"></div>
+    </div>
+
+    <script>
+        // 錯誤處理測試
+        function testErrorHandling() {
+            console.log('=== 錯誤處理測試開始 ===');
+            
+            const results = [];
+            
+            // 測試 1: safeRender 錯誤處理
+            try {
+                SecurityUtils.safeRender(null, 'test content');
+                results.push('✅ safeRender null element 處理正常');
+            } catch (e) {
+                results.push('❌ safeRender null element 處理失敗: ' + e.message);
+            }
+            
+            // 測試 2: validateURL 錯誤處理
+            try {
+                const result1 = SecurityUtils.validateURL(null);
+                const result2 = SecurityUtils.validateURL('invalid-url');
+                const result3 = SecurityUtils.validateURL('javascript:alert("test")');
+                
+                if (!result1 && !result2 && !result3) {
+                    results.push('✅ validateURL 錯誤處理正常');
+                } else {
+                    results.push('❌ validateURL 錯誤處理異常');
+                }
+            } catch (e) {
+                results.push('❌ validateURL 錯誤處理失敗: ' + e.message);
+            }
+            
+            // 測試 3: getSecureURLParam 錯誤處理
+            try {
+                const result = SecurityUtils.getSecureURLParam('nonexistent');
+                results.push('✅ getSecureURLParam 錯誤處理正常');
+            } catch (e) {
+                results.push('❌ getSecureURLParam 錯誤處理失敗: ' + e.message);
+            }
+            
+            document.getElementById('error-test-result').innerHTML = results.join('<br>');
+        }
+        
+        // 安全日誌測試
+        function testSecurityLogging() {
+            console.log('=== 安全日誌測試開始 ===');
+            
+            // 觸發各種安全事件
+            SecurityUtils.validateURL('javascript:alert("test")');
+            SecurityUtils.validateURL('//malicious.com');
+            SecurityUtils.safeRender(null, 'test');
+            SecurityUtils.getSecureURLParam('test');
+            
+            alert('安全事件已觸發，請點擊"顯示安全日誌"查看記錄');
+        }
+        
+        // 顯示安全日誌
+        function displayLogs() {
+            const logs = SecurityUtils.getSecurityLogs();
+            const logsDisplay = document.getElementById('logs-display');
+            
+            if (logs.length === 0) {
+                logsDisplay.innerHTML = '<p>目前沒有安全日誌記錄</p>';
+                return;
+            }
+            
+            let html = `<h4>安全日誌 (${logs.length} 條記錄)</h4>`;
+            logs.slice(-10).forEach(log => { // 顯示最近10條
+                html += `<div class="log-entry">
+                    <strong>${log.timestamp}</strong> - ${log.function}<br>
+                    事件: ${log.event}<br>
+                    詳情: ${JSON.stringify(log.details)}
+                </div>`;
+            });
+            
+            logsDisplay.innerHTML = html;
+        }
+        
+        // 清除日誌
+        function clearLogs() {
+            SecurityUtils.clearSecurityLogs();
+            document.getElementById('logs-display').innerHTML = '<p>日誌已清除</p>';
+        }
+        
+        // 監控功能驗證
+        function runMonitoringTests() {
+            console.log('=== 監控功能驗證開始 ===');
+            
+            const results = [];
+            
+            // 測試日誌記錄功能
+            const initialLogCount = SecurityUtils.getSecurityLogs().length;
+            SecurityUtils.logSecurityEvent('test', 'monitoring test', { testData: 'test' });
+            const newLogCount = SecurityUtils.getSecurityLogs().length;
+            
+            if (newLogCount > initialLogCount) {
+                results.push('✅ 日誌記錄功能正常');
+            } else {
+                results.push('❌ 日誌記錄功能異常');
+            }
+            
+            // 測試日誌清除功能
+            SecurityUtils.clearSecurityLogs();
+            const clearedLogCount = SecurityUtils.getSecurityLogs().length;
+            
+            if (clearedLogCount === 0) {
+                results.push('✅ 日誌清除功能正常');
+            } else {
+                results.push('❌ 日誌清除功能異常');
+            }
+            
+            // 測試 sessionStorage 可用性
+            try {
+                sessionStorage.setItem('test', 'test');
+                sessionStorage.removeItem('test');
+                results.push('✅ sessionStorage 可用');
+            } catch (e) {
+                results.push('⚠️ sessionStorage 不可用: ' + e.message);
+            }
+            
+            document.getElementById('monitoring-result').innerHTML = results.join('<br>');
+        }
+        
+        // 頁面載入時顯示當前狀態
+        window.addEventListener('load', function() {
+            const logCount = SecurityUtils.getSecurityLogs().length;
+            if (logCount > 0) {
+                document.getElementById('logs-display').innerHTML = 
+                    `<p>發現 ${logCount} 條現有日誌記錄，點擊"顯示安全日誌"查看</p>`;
+            }
+        });
+    </script>
+</body>
+</html>

@@ -3,11 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' fonts.googleapis.com; font-src 'self' fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self';">
+    
     <title>個人數位名片</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="assets/qrcode.min.js"></script>
+    <script src="assets/security-utils.js"></script>
     <link rel="stylesheet" href="assets/qrcode-style.css">
     <style>
         * {
@@ -685,12 +688,8 @@
                 while (socialInfoContent.firstChild) {
                     socialInfoContent.removeChild(socialInfoContent.firstChild);
                 }
-                // 由於 processSocialLinks 返回 HTML 字符串，我們需要安全地解析它
-                const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = processedContent;
-                while (tempDiv.firstChild) {
-                    socialInfoContent.appendChild(tempDiv.firstChild);
-                }
+                // 使用安全渲染替代innerHTML
+                SecurityUtils.safeRender(socialInfoContent, processedContent, true);
                 socialInfoSection.style.display = 'block';
             } else {
                 socialInfoSection.style.display = 'none';
@@ -784,8 +783,10 @@
         }
 
         function getCardDataFromNFC() {
+            // 從 URL 參數中獲取 NFC 傳送的 JSON 資料 - 使用安全方法
             const urlParams = new URLSearchParams(window.location.search);
-            let cardDataParam = urlParams.get('data');
+            // 使用安全方法讀取URL參數
+            let cardDataParam = SecurityUtils.getSecureURLParam('data');
             let isCompactFormat = false;
             
             if (!cardDataParam) {
@@ -817,21 +818,27 @@
         }
 
         function convertCompactToFull(compactData) {
+            // 安全處理函數，過濾 DECRYPTION_FAILED 錯誤
+            const safeValue = (value) => {
+                if (!value || value === '[DECRYPTION_FAILED]') return '';
+                return value;
+            };
+            
             return {
                 data: {
-                    name: compactData.n || '',
-                    title: compactData.t || '',
-                    department: compactData.d || '',
+                    name: safeValue(compactData.n),
+                    title: safeValue(compactData.t),
+                    department: safeValue(compactData.d),
                     organization: compactData.o || '',
-                    email: compactData.e || '',
-                    phone: compactData.p || '',
-                    mobile: compactData.m || '',
-                    avatar: compactData.a || '',
+                    email: safeValue(compactData.e),
+                    phone: safeValue(compactData.p),
+                    mobile: safeValue(compactData.m),
+                    avatar: safeValue(compactData.a),
                     address: compactData.addr || '',
                     greetings: compactData.g || ['歡迎認識我！'],
                     socialLinks: {
                         email: compactData.e ? `mailto:${compactData.e}` : '',
-                        socialNote: compactData.s || ''
+                        socialNote: safeValue(compactData.s)
                     }
                 }
             };

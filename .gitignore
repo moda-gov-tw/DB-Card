@@ -14,3 +14,6 @@ CLAUDE.md
 # Temporary files
 *.tmp
 *~
+
+# Backup files
+.backups/

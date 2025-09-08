@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' fonts.googleapis.com; font-src 'self' fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self';">
+    <title>全面安全測試</title>
+    <script src="../assets/security-utils.js"></script>
+    <script src="../assets/bilingual-common.js"></script>
+</head>
+<body>
+    <h1>全面安全測試 - Task 5.2</h1>
+    <div id="test-results"></div>
+
+    <script>
+        function runComprehensiveSecurityTests() {
+            const results = [];
+            
+            // 測試1: XSS Payload測試
+            const xssPayloads = [
+                '<script>alert("xss1")</script>',
+                '<img src=x onerror=alert(1)>',
+                'javascript:alert("xss3")',
+                '<svg onload=alert(1)>',
+                '"><script>alert("xss5")</script>'
+            ];
+            
+            xssPayloads.forEach((payload, index) => {
+                const sanitized = SecurityUtils.sanitizeInput(payload);
+                results.push({
+                    test: `XSS Payload ${index + 1}`,
+                    input: payload,
+                    output: sanitized,
+                    pass: !sanitized.includes('<script>') && !sanitized.includes('onerror') && !sanitized.includes('onload')
+                });
+            });
+            
+            // 測試2: URL驗證測試
+            const maliciousUrls = [
+                'javascript:alert("hack")',
+                'data:text/html,<script>alert("hack")</script>',
+                'vbscript:msgbox("hack")',
+                '//evil-site.com/malware',
+                'ftp://malicious.com'
+            ];
+            
+            maliciousUrls.forEach((url, index) => {
+                const isValid = SecurityUtils.validateURL(url);
+                results.push({
+                    test: `惡意URL ${index + 1}`,
+                    input: url,
+                    pass: !isValid,
+                    details: `URL被${isValid ? '允許' : '阻擋'}`
+                });
+            });
+            
+            // 測試3: 合法URL測試
+            const legitimateUrls = [
+                'https://example.com',
+                'http://localhost:3000',
+                'mailto:test@example.com',
+                'tel:+886912345678'
+            ];
+            
+            legitimateUrls.forEach((url, index) => {
+                const isValid = SecurityUtils.validateURL(url);
+                results.push({
+                    test: `合法URL ${index + 1}`,
+                    input: url,
+                    pass: isValid,
+                    details: `URL被${isValid ? '允許' : '阻擋'}`
+                });
+            });
+            
+            // 測試4: 安全渲染測試
+            const testDiv = document.createElement('div');
+            const htmlContent = '<p>正常內容</p><script>alert("evil")</script><img src=x onerror=alert("evil2")>';
+            SecurityUtils.safeRender(testDiv, htmlContent, true);
+            
+            results.push({
+                test: '安全HTML渲染',
+                input: htmlContent,
+                output: testDiv.innerHTML,
+                pass: !testDiv.innerHTML.includes('<script>') && !testDiv.innerHTML.includes('onerror')
+            });
+            
+            // 測試5: 社群連結安全測試
+            const container = document.createElement('div');
+            const maliciousLink = createSocialElement('Test', 'javascript:alert("social-hack")', 'Test', '#007cba');
+            container.appendChild(maliciousLink);
+            
+            const linkElement = maliciousLink.querySelector('a');
+            results.push({
+                test: '社群連結安全處理',
+                pass: linkElement.getAttribute('aria-disabled') === 'true' && !linkElement.hasAttribute('href'),
+                details: `連結被正確禁用: aria-disabled=${linkElement.getAttribute('aria-disabled')}`
+            });
+            
+            // 測試7: DOM Clobbering 防護
+            results.push(testDOMClobbering());
+            
+            // 顯示結果
+            const resultsDiv = document.getElementById('test-results');
+            const passCount = results.filter(r => r.pass).length;
+            const totalTests = results.length;
+            
+            resultsDiv.innerHTML = `
+                <h2>安全測試結果: ${passCount}/${totalTests} 通過 (${Math.round(passCount/totalTests*100)}%)</h2>
+                <div style="margin: 20px 0;">
+                    <strong>測試摘要:</strong><br>
+                    XSS防護: ${results.slice(0,5).filter(r => r.pass).length}/5<br>
+                    惡意URL阻擋: ${results.slice(5,10).filter(r => r.pass).length}/5<br>
+                    合法URL允許: ${results.slice(10,14).filter(r => r.pass).length}/4<br>
+                    安全渲染: ${results.slice(14,15).filter(r => r.pass).length}/1<br>
+                    社群連結安全: ${results.slice(15,16).filter(r => r.pass).length}/1<br>
+                    DOM Clobbering防護: ${results.slice(16,17).filter(r => r.pass).length}/1
+                </div>
+                ${results.map(result => `
+                    <div style="margin: 10px 0; padding: 10px; border: 1px solid ${result.pass ? 'green' : 'red'}; border-radius: 4px;">
+                        <h3>${result.test}: ${result.pass ? '✅ PASS' : '❌ FAIL'}</h3>
+                        <p><strong>輸入:</strong> ${result.input || 'N/A'}</p>
+                        ${result.output ? `<p><strong>輸出:</strong> ${result.output}</p>` : ''}
+                        ${result.details ? `<p><strong>詳情:</strong> ${result.details}</p>` : ''}
+                    </div>
+                `).join('')}
+                
+                <div style="margin-top: 20px; padding: 15px; background: ${passCount === totalTests ? '#d4edda' : '#f8d7da'}; border-radius: 4px;">
+                    <h3>${passCount === totalTests ? '🎉 所有安全測試通過！' : '⚠️ 發現安全問題，需要檢查'}</h3>
+                    <p>Task 5.2 全面安全測試 ${passCount === totalTests ? '完成' : '部分完成'}</p>
+                </div>
+            `;
+        }
+        
+        // DOM Clobbering 防護測試
+        function testDOMClobbering() {
+            const clobberDiv = document.createElement('div');
+            // 此 payload 嘗試創建一個 name 為 'SecurityUtils' 的 form 元素
+            const clobberPayload = '<form id="SecurityUtils"></form>';
+            SecurityUtils.safeRender(clobberDiv, clobberPayload, true);
+            document.body.appendChild(clobberDiv); // 需將元素附加到DOM才能觸發
+
+            const isClobbered = typeof window.SecurityUtils !== 'object';
+            
+            const result = {
+                test: 'DOM Clobbering 防護',
+                input: clobberPayload,
+                pass: !isClobbered,
+                details: `測試後 window.SecurityUtils 類型為: ${typeof window.SecurityUtils} (預期: object)`
+            };
+            
+            document.body.removeChild(clobberDiv); // 清理
+            return result;
+        }
+        
+        // 執行測試
+        runComprehensiveSecurityTests();
+    </script>
+</body>
+</html>
