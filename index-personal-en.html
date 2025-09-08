@@ -629,7 +629,7 @@
                 this.style.display = 'none';
             };
             avatar.alt = data.name;
-            avatar.src = data.avatar;
+            SecurityUtils.setSecureAttribute(avatar, 'src', data.avatar, [                'https://i.imgur.com',                'https://i.postimg.cc',                 'https://raw.githubusercontent.com',                'https://drive.google.com'            ]);
             
             // Contact information
             const emailLink = document.getElementById('user-email');
@@ -639,7 +639,7 @@
             const phoneItem = document.getElementById('phone-item');
             if (data.phone) {
                 const phoneLink = document.getElementById('user-phone');
-                SecurityUtils.setSecureAttribute(phoneLink, 'href', `tel:${data.phone.replace(/[^0-9+]/g, '')}`;
+                SecurityUtils.setSecureAttribute(phoneLink, 'href', `tel:${data.phone.replace(/[^0-9+]/g, '')}`);
                 phoneLink.textContent = data.phone;
                 phoneItem.style.display = 'flex';
             } else {
@@ -649,7 +649,7 @@
             const mobileItem = document.getElementById('mobile-item');
             if (data.mobile && data.mobile.trim() !== '') {
                 const mobileLink = document.getElementById('user-mobile');
-                SecurityUtils.setSecureAttribute(mobileLink, 'href', `tel:${data.mobile.replace(/[^0-9+]/g, '')}`;
+                SecurityUtils.setSecureAttribute(mobileLink, 'href', `tel:${data.mobile.replace(/[^0-9+]/g, '')}`);
                 mobileLink.textContent = data.mobile;
                 mobileItem.style.display = 'flex';
             } else {

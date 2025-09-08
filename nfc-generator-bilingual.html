@@ -331,7 +331,7 @@
                     <label>大頭貼 URL：</label>
                     <input type="url" id="avatar" placeholder="https://i.imgur.com/example.jpg" maxlength="200">
                     <div class="help-text">
-                        推薦使用 <a href="https://imgur.com" target="_blank">Imgur</a> 或 <a href="https://postimages.org" target="_blank">PostImages</a>(複製 Direct link) 上傳圖片，
+                        推薦使用 <a href="https://imgur.com" target="_blank">Imgur</a>、<a href="https://postimages.org" target="_blank">PostImages</a>(複製 Direct link) 或 <a href="https://drive.google.com" target="_blank">Google Drive</a>(分享連結自動轉換) 上傳圖片，
                         或留空以節省 NFC 容量
                     </div>
                 </div>
@@ -608,7 +608,28 @@
                 bilingualGreetings.push(`${zh}~${en}`);
             }
             
-            const avatar = document.getElementById('avatar').value.trim();
+            // 轉換 Google Drive 分享連結為直接圖片連結
+            function convertGoogleDriveUrl(url) {
+                if (!url) return url;
+                
+                // 匹配 Google Drive 分享連結格式
+                const match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+                if (match) {
+                    const fileId = match[1];
+                    return `https://drive.google.com/uc?export=view&id=${fileId}`;
+                }
+                
+                // 如果已經是直接連結格式，返回原連結
+                if (url.includes('drive.google.com/uc?')) {
+                    return url;
+                }
+                
+                return url;
+            }
+
+            let avatar = document.getElementById('avatar').value.trim();
+            avatar = convertGoogleDriveUrl(avatar);
+            
             if (avatar && !isValidUrl(avatar)) {
                 alert('請輸入有效的圖片 URL');
                 return null;

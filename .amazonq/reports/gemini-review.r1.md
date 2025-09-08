@@ -1,97 +1,83 @@
 Data collection is disabled.
-好的，我將扮演嚴格代碼審查者的角色。
+好的，我將以《嚴格代碼審查者》的身份，對您提供的 XSS 修復變更進行審查。
 
-由於沒有具體的程式碼變更可供審查，我將根據您提供的檔案上下文（特別是 `弱點修補任務清單.md` 和 `弱點修補技術架構.md`）以及專案結構，推斷出一個潛在且關鍵的風險點進行審查。
-
-我將聚焦於客戶端 HTML 檔案中常見的跨網站指令碼（XSS）漏洞，這通常是此類專案的最高風險之一。我假設修補任務涉及對動態內容（例如從 URL 參數讀取的內容）的淨化處理。
-
----
-
+首先，為了評估修復的有效性，我需要檢查核心邏輯 `SecurityUtils.setSecureAttribute` 的實現。
 ### **代碼審查報告**
 
 #### **1) 嚴重性評級與理由**
 
 *   **High (高)**
-*   **理由**: 專案中的多個 HTML 檔案疑似直接將從 URL 參數獲取的未淨化資料動態寫入 DOM，極易受到反射型 XSS 攻擊。攻擊者可構造惡意連結，在使用者瀏覽器中執行任意腳本，可能導致會話劫持、釣魚攻擊或植入惡意軟體。此風險直接威脅使用者安全與資料完整性。
+*   **理由**: 此變更旨在修復一個典型的反射型跨網站指令碼（XSS）漏洞。攻擊者可以構造一個包含惡意 `javascript:` URI 的連結（例如 `.../index.html?avatar=javascript:alert('XSS')`）。在修復前，此 URI 會被直接賦值給圖片的 `src` 屬性，導致在使用者瀏覽器中執行任意腳本。此類攻擊可竊取使用者會話、篡改頁面內容或將使用者重定向到惡意網站，對使用者安全構成直接威脅。
 
 #### **2) 受影響檔案與風險來源**
 
 *   **風險來源**: 資安 (Security)
 *   **受影響檔案**:
-    *   `index.html`
-    *   `index-bilingual.html`
+    *   `index-en.html`
+    *   `index-personal-en.html`
     *   `index-personal.html`
-    *   (以及其他所有從 URL 動態生成 vCard 或 QR Code 的相關 HTML 檔案)
-*   **詳細說明**: 這些檔案中的 JavaScript 程式碼透過 `URLSearchParams` 讀取查詢參數（如 `name`, `tel`, `email` 等），並可能在未經嚴格過濾的情況下，使用 `.innerHTML` 或類似方法將其呈現在頁面上。這是典型的 XSS 漏洞（CWE-79）。
+    *   `index.html`
+    *   `index1-bilingual.html`
+    *   `index1-en.html`
+    *   `index1.html`
+*   **詳細說明**: 這些檔案中的 JavaScript 從 URL 參數讀取 `avatar` 值，並將其動態設置為 `<img>` 元素的 `src` 屬性。未經嚴格驗證的 `src` 屬性是已知的 XSS 攻擊向量 (CWE-79)。
 
 #### **3) 修復建議與驗證步驟**
 
+變更的核心是引入 `SecurityUtils.setSecureAttribute` 來設置 `src` 屬性。經審查 `assets/security-utils.js`，該函數的實現是有效的：它呼叫 `validateURL`，該函數使用一個包含 `http:`、`https:`、`mailto:` 和 `tel:` 的協議白名單來驗證 URL。這能有效阻止 `javascript:` 等危險協議。
+
+然而，當 URL 驗證失敗時，當前的降級行為是 `element.setAttribute(attribute, '#')`。這會導致瀏覽器嘗試載入一個無效的圖片來源，並在控制台中產生一個 404 錯誤，同時觸發 `onerror` 事件。一個更乾淨、更符合最小變更原則的修復是完全不設置 `src` 或將其設置為空字串，並依賴現有的 `onerror` 處理邏輯來隱藏圖片元素。
+
 **修復建議 (最小變更原則)**
 
-我建議在將任何外部輸入（特別是 URL 參數）插入 DOM 之前，強制使用 `DOMPurify` 進行淨化。專案中已包含 `dompurify.min.js`，應充分利用。
-
-以下是一個針對性的修復範例，假設原始程式碼如下：
-
-```javascript
-// Vulnerable Code
-const params = new URLSearchParams(window.location.search);
-const name = params.get('name');
-document.getElementById('name-display').innerHTML = name; // XSS vulnerability here
-```
-
-建議修復為：
+修改 `assets/security-utils.js` 中 `setSecureAttribute` 函數的錯誤處理分支，使其在 URL 無效時採取更簡潔的措施。
 
 ```diff
---- a/index.html
-+++ b/index.html
-@@ -100,4 +100,4 @@
- const params = new URLSearchParams(window.location.search);
- const name = params.get('name');
--document.getElementById('name-display').innerHTML = name;
-+document.getElementById('name-display').textContent = name; // Use textContent for simple text
-+// OR if HTML is needed:
-+// document.getElementById('name-display').innerHTML = DOMPurify.sanitize(name);
+--- a/assets/security-utils.js
++++ b/assets/security-utils.js
+@@ -250,11 +250,10 @@
+                 if (this.validateURL(value, allowedOrigins)) {
+                     element.setAttribute(attribute, value);
+                 } else {
+-                    // 如果驗證失敗，記錄事件並設置安全的預設值
+                     this.logSecurityEvent('setSecureAttribute', 'Invalid URL blocked', { attribute, value });
+                     if (attribute.toLowerCase() === 'href') {
+                         element.removeAttribute('href');
+                         element.setAttribute('aria-disabled', 'true');
+                     } else {
+-                        element.setAttribute(attribute, '#');
++                        // 讓 onerror 事件處理 UI，不設置無效的 src
++                        element.setAttribute(attribute, '');
+                     }
+                 }
+             } else {
 
-```
-
-**通用修復原則**:
-1.  對於不需要呈現 HTML 標籤的內容，一律使用 `.textContent` 而非 `.innerHTML`。這是最簡單且最安全的防禦。
-2.  若內容必須包含 HTML（例如，URL 參數中包含需呈現的換行 ` <br> `），則必須使用 `DOMPurify.sanitize()` 進行處理。
-3.  在 `assets/security-utils.js` 中建立一個輔助函數，封裝淨化邏輯，以確保所有開發人員都能一致地調用。
-
-```javascript
-// In assets/security-utils.js
-function sanitizeInput(input) {
-  if (typeof input !== 'string') return '';
-  return DOMPurify.sanitize(input);
-}
 ```
 
 **驗證步驟**:
-1.  **單元測試**: 開啟 `tests/test-dompurify-integration.html` 或 `tests/test-security-comprehensive.html`。
-2.  **手動驗證**: 在瀏覽器中開啟任一受影響的 HTML 檔案，並在 URL 後附加惡意腳本作為參數，例如：
-    `.../index.html?name=<img src=x onerror=alert('XSS')>`
-3.  **預期結果**:
+1.  **手動驗證 (惡意負載)**: 在瀏覽器中開啟任一受影響的 HTML 檔案，並在 URL 後附加惡意腳本作為 `avatar` 參數：
+    *   `.../index.html?name=test&avatar=javascript:alert('XSS')`
+    *   `.../index.html?name=test&avatar=x%20onerror=alert('XSS')`
+2.  **預期結果**:
     *   **修復前**: 瀏覽器會彈出一個包含 "XSS" 字樣的警告框。
-    *   **修復後**: 警告框不應出現。頁面上應顯示無害的純文字 ` <img src=x> ` 或完全不顯示該圖片標籤。
+    *   **修復後**: 警告框 **不應** 出現。頭像圖片應被 `onerror` 事件處理器隱藏，控制台應顯示來自 `SecurityUtils` 的安全事件日誌，而不是圖片載入失敗的 404 錯誤。
 
 #### **4) Security**
 
-此變更直接解決了 CWE-79（不當的中和輸入於網頁生成）。透過確保所有使用者提供的內容在寫入 DOM 前都經過淨化，可以有效防禦反射型 XSS 攻擊，顯著提升應用程式的安全性。
+此變更透過對 `src` 屬性中的 URL 實施嚴格的協議白名單驗證，有效地緩解了 CWE-79（不當的中和輸入於網頁生成）漏洞。它阻止了基於 `javascript:` URI 的 XSS 攻擊，顯著增強了應用程式的客戶端安全性。
 
 #### **5) Accessibility**
 
-此修復對可及性（Accessibility）沒有負面影響。若惡意腳本被執行，反而可能透過 DOM 操作破壞頁面結構，降低可及性。因此，防禦 XSS 有助於維持一個穩定、可預測的無障礙網頁環境。
+此修復對可及性有正面影響。透過阻止惡意腳本執行，它保護了 DOM 的完整性，確保螢幕閱讀器和其他輔助技術不會因 DOM 被意外篡改而失效。當一個無效的頭像 URL 被提供時，圖片被隱藏，但 `alt` 屬性（已正確設置為使用者名稱）仍然存在於 DOM 中，這符合預期行為。
 
 #### **6) 建議提交訊息**
 
 ```
-feat(security): Sanitize URL parameters to prevent XSS
+feat(security): Validate avatar URL to prevent XSS
 
-Refactor dynamic content rendering to mitigate reflected Cross-Site Scripting (XSS) vulnerabilities. All data retrieved from URL search parameters is now processed before being inserted into the DOM.
+Implement strict URL validation for the avatar's `src` attribute to mitigate reflected Cross-Site Scripting (XSS) vulnerabilities.
 
-- Use `textContent` instead of `innerHTML` for inserting plain text content.
-- Apply `DOMPurify.sanitize()` for any input that may legitimately contain HTML markup.
+The `SecurityUtils.setSecureAttribute` function now ensures that any value assigned to `src` or `href` attributes adheres to a whitelist of allowed protocols (http:, https:, etc.), effectively blocking `javascript:` URIs and other malicious payloads.
 
-This change hardens the application against malicious link attacks, protecting user data and session integrity.
+If an invalid URL is provided, the `src` attribute is set to an empty string, allowing the existing `onerror` handler to gracefully hide the broken image element. This prevents console errors and hardens the application against script injection attacks.
 ```

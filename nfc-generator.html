@@ -329,9 +329,10 @@
                             • <a href="https://imgur.com" target="_blank" style="color: #3b82f6;">Imgur</a> - 上傳後右鍵複製圖片網址<br>
                             • <a href="https://postimages.org" target="_blank" style="color: #3b82f6;">PostImages</a> - 上傳後複製 Direct link<br>
                             • <a href="https://github.com" target="_blank" style="color: #3b82f6;">GitHub</a> - 上傳到 repository 後使用 raw 連結<br>
+                            • <a href="https://drive.google.com" target="_blank" style="color: #3b82f6;">Google Drive</a> - 分享連結會自動轉換為直接連結<br>
                             • 任何支援 HTTPS 的圖床服務<br>
                             ⚠️ 必須以 https:// 開頭的完整網址，避免使用相對路徑<br>
-                            ❌ 不支援：Google Drive 分享連結、相對路徑 (./assets/...)
+                            📋 <strong>Google Drive 使用方式：</strong>上傳圖片 → 右鍵分享 → 複製連結即可
                         </div>
                     </div>
                     <div class="form-group" id="officialGreetingGroup">
@@ -475,6 +476,29 @@
             }
             
             // 根據版面類型建立資料結構
+            // 轉換 Google Drive 分享連結為直接圖片連結
+            function convertGoogleDriveUrl(url) {
+                if (!url) return url;
+                
+                // 匹配 Google Drive 分享連結格式
+                const match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+                if (match) {
+                    const fileId = match[1];
+                    return `https://drive.google.com/uc?export=view&id=${fileId}`;
+                }
+                
+                // 如果已經是直接連結格式，返回原連結
+                if (url.includes('drive.google.com/uc?')) {
+                    return url;
+                }
+                
+                return url;
+            }
+
+            // 處理大頭貼 URL，支援 Google Drive 轉換
+            let avatarUrl = document.getElementById('avatar').value;
+            avatarUrl = convertGoogleDriveUrl(avatarUrl);
+
             const cardData = {
                 n: document.getElementById('name').value,
                 t: document.getElementById('title').value,
@@ -482,7 +506,7 @@
                 e: document.getElementById('email').value,
                 p: document.getElementById('phone').value,
                 m: document.getElementById('mobile').value,
-                a: document.getElementById('avatar').value,
+                a: avatarUrl,
                 g: greetingsArray,
                 s: document.getElementById('socialNote').value
             };

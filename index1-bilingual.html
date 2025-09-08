@@ -561,7 +561,12 @@
                     // 處理頭像
                     const avatar = document.getElementById('userAvatar');
                     if (currentData.avatar) {
-                        avatar.src = currentData.avatar;
+                        SecurityUtils.setSecureAttribute(avatar, 'src', currentData.avatar, [
+                            'https://i.imgur.com',
+                            'https://i.postimg.cc', 
+                            'https://raw.githubusercontent.com',
+                            'https://drive.google.com'
+                        ]);
                         avatar.style.display = 'block';
                         avatar.onerror = function() {
                             this.style.display = 'none';

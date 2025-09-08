@@ -663,7 +663,11 @@
             
             // 開始載入圖片
             console.log('Loading avatar:', data.avatar);
-            avatar.src = data.avatar;
+            SecurityUtils.setSecureAttribute(avatar, 'src', data.avatar, [
+                'https://i.imgur.com',
+                'https://i.postimg.cc', 
+                'https://raw.githubusercontent.com',                'https://drive.google.com'
+            ]);
             
             // 聯絡資訊
             const emailLink = document.getElementById('user-email');
