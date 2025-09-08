@@ -3,6 +3,16 @@
  * 提供編碼優化、雙語解析、語言切換等核心功能
  */
 
+// SecurityUtils 載入驗證
+if (typeof SecurityUtils === 'undefined') {
+    console.warn('SecurityUtils not loaded. Security features disabled.');
+}
+
+// 統一 SecurityUtils 檢查模式
+const safeSetAttribute = (el, attr, val, origins) => 
+    SecurityUtils?.setSecureAttribute(el, attr, val, origins) || 
+    console.error('SecurityUtils required') || false;
+
 // 全域變數
 // 偵測瀏覽器語言偏好，預設為中文
 function detectBrowserLanguage() {
@@ -225,7 +235,7 @@ function renderBilingualCard(data, lang = 'zh') {
         updateElement('userPhone', data.phone);
         const phoneLink = document.getElementById('userPhone');
         if (phoneLink) {
-            phoneLink.href = `tel:${data.phone.replace(/[^0-9+]/g, '')}`;
+            safeSetAttribute(phoneLink, 'href', `tel:${data.phone.replace(/[^0-9+]/g, '')}`);
         }
         if (phoneItem) phoneItem.style.display = 'flex';
     } else {
@@ -238,7 +248,7 @@ function renderBilingualCard(data, lang = 'zh') {
         updateElement('userMobile', data.mobile);
         const mobileLink = document.getElementById('userMobile');
         if (mobileLink) {
-            mobileLink.href = `tel:${data.mobile.replace(/[^0-9+]/g, '')}`;
+            safeSetAttribute(mobileLink, 'href', `tel:${data.mobile.replace(/[^0-9+]/g, '')}`);
         }
         if (mobileItem) mobileItem.style.display = 'flex';
     } else {
@@ -477,18 +487,22 @@ function initializePage() {
             // 處理頭像
             const avatar = document.getElementById('userAvatar');
             if (avatar && currentData.avatar) {
-                // 使用 SecurityUtils 安全設置圖片來源，包含白名單驗證
-                const allowedImageOrigins = [
-                    'https://i.imgur.com', 'https://imgur.com',
-                    'https://i.postimg.cc', 'https://postimages.org', 
-                    'https://github.com', 'https://raw.githubusercontent.com',
-                    'https://drive.google.com'
-                ];
-                SecurityUtils.setSecureAttribute(avatar, 'src', currentData.avatar, allowedImageOrigins);
-                avatar.style.display = 'block';
-                avatar.onerror = function() {
-                    this.style.display = 'none';
-                };
+                if (SecurityUtils) {
+                    // 使用 SecurityUtils 安全設置圖片來源，包含白名單驗證
+                    const allowedImageOrigins = [
+                        'https://i.imgur.com', 'https://imgur.com',
+                        'https://i.postimg.cc', 'https://postimages.org', 
+                        'https://github.com', 'https://raw.githubusercontent.com',
+                        'https://drive.google.com'
+                    ];
+                    safeSetAttribute(avatar, 'src', currentData.avatar, allowedImageOrigins);
+                    avatar.style.display = 'block';
+                    avatar.onerror = function() {
+                        this.style.display = 'none';
+                    };
+                } else {
+                    console.warn('Avatar loading disabled: SecurityUtils unavailable');
+                }
             } else if (avatar) {
                 avatar.style.display = 'none';
             }
