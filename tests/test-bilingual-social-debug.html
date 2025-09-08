@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>雙語版社群連結問題診斷</title>
+    <script src="../assets/dompurify.min.js"></script>
+    <script src="../assets/security-utils.js"></script>
+    <script src="../assets/bilingual-common.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .error { color: red; }
+        .success { color: green; }
+        .debug { background: #f5f5f5; padding: 10px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>雙語版社群連結問題診斷</h1>
+    
+    <div class="test-section">
+        <h2>1. 依賴檢查</h2>
+        <div id="dependencies-check"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>2. 函數可用性測試</h2>
+        <div id="function-check"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>3. 社群連結解析測試</h2>
+        <div id="parsing-test"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>4. 實際渲染測試</h2>
+        <div id="render-test"></div>
+    </div>
+    
+    <script>
+        function runDiagnostics() {
+            // 1. 檢查依賴
+            const depsDiv = document.getElementById('dependencies-check');
+            const deps = [
+                { name: 'DOMPurify', obj: window.DOMPurify },
+                { name: 'SecurityUtils', obj: window.SecurityUtils },
+                { name: 'processSocialLinks', obj: window.processSocialLinks },
+                { name: 'createSocialElement', obj: window.createSocialElement }
+            ];
+            
+            deps.forEach(dep => {
+                const status = dep.obj ? '✅ 可用' : '❌ 不可用';
+                const className = dep.obj ? 'success' : 'error';
+                depsDiv.innerHTML += `<div class="${className}">${dep.name}: ${status}</div>`;
+            });
+            
+            // 2. 函數測試
+            const funcDiv = document.getElementById('function-check');
+            try {
+                if (typeof processSocialLinks === 'function') {
+                    funcDiv.innerHTML += '<div class="success">✅ processSocialLinks 函數存在</div>';
+                    
+                    // 測試基本調用
+                    const testResult = processSocialLinks('FB: test', 'zh');
+                    funcDiv.innerHTML += `<div class="success">✅ 函數可正常調用，返回類型: ${testResult.constructor.name}</div>`;
+                } else {
+                    funcDiv.innerHTML += '<div class="error">❌ processSocialLinks 函數不存在</div>';
+                }
+            } catch (error) {
+                funcDiv.innerHTML += `<div class="error">❌ 函數測試錯誤: ${error.message}</div>`;
+            }
+            
+            // 3. 解析測試
+            const parseDiv = document.getElementById('parsing-test');
+            const testCases = [
+                'FB: test-user',
+                'IG: @test_user',
+                'LINE: @test-official',
+                'GitHub: test-dev'
+            ];
+            
+            testCases.forEach(testCase => {
+                try {
+                    const result = processSocialLinks(testCase, 'zh');
+                    const hasChildren = result.children && result.children.length > 0;
+                    const status = hasChildren ? '✅ 解析成功' : '⚠️ 無子元素';
+                    const className = hasChildren ? 'success' : 'error';
+                    parseDiv.innerHTML += `<div class="${className}">${testCase}: ${status}</div>`;
+                } catch (error) {
+                    parseDiv.innerHTML += `<div class="error">${testCase}: ❌ 錯誤 - ${error.message}</div>`;
+                }
+            });
+            
+            // 4. 實際渲染測試
+            const renderDiv = document.getElementById('render-test');
+            try {
+                const socialData = 'FB: test-page\nIG: @test_account\nLINE: @official-test';
+                const result = processSocialLinks(socialData, 'zh');
+                
+                if (result.children.length > 0) {
+                    renderDiv.innerHTML = '<div class="success">✅ 渲染測試成功:</div>';
+                    renderDiv.appendChild(result);
+                } else {
+                    renderDiv.innerHTML = '<div class="error">❌ 渲染失敗：無子元素生成</div>';
+                }
+            } catch (error) {
+                renderDiv.innerHTML = `<div class="error">❌ 渲染錯誤: ${error.message}</div>`;
+            }
+            
+            // 5. 控制台日誌檢查
+            console.log('=== 診斷完成 ===');
+            console.log('SecurityUtils:', window.SecurityUtils);
+            console.log('processSocialLinks:', window.processSocialLinks);
+        }
+        
+        // 頁面載入後執行診斷
+        document.addEventListener('DOMContentLoaded', runDiagnostics);
+    </script>
+</body>
+</html>

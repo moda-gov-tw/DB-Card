@@ -75,78 +75,44 @@
         },
 
         /**
-         * HTML白名單清理 - 加強版安全過濾
+         * HTML白名單清理 - 使用 DOMPurify 進行安全過濾
          * @param {string} html - 待清理的HTML
          * @returns {string} 清理後的安全HTML
          */
         sanitizeHTML: function(html) {
-            const allowedTags = ['b', 'i', 'em', 'strong', 'span', 'br'];
-            const allowedAttrs = ['class'];
-            
-            // 第一階段：移除所有危險標籤和屬性
-            let cleaned = html
-                // 移除所有腳本相關標籤
-                .replace(/<script[^>]*>.*?<\/script>/gi, '')
-                .replace(/<iframe[^>]*>.*?<\/iframe>/gi, '')
-                .replace(/<object[^>]*>.*?<\/object>/gi, '')
-                .replace(/<embed[^>]*>/gi, '')
-                .replace(/<applet[^>]*>.*?<\/applet>/gi, '')
-                .replace(/<form[^>]*>.*?<\/form>/gi, '')
-                .replace(/<input[^>]*>/gi, '')
-                .replace(/<textarea[^>]*>.*?<\/textarea>/gi, '')
-                .replace(/<select[^>]*>.*?<\/select>/gi, '')
-                .replace(/<button[^>]*>.*?<\/button>/gi, '')
-                .replace(/<a[^>]*>.*?<\/a>/gi, '')
-                // 移除可能執行腳本的標籤
-                .replace(/<svg[^>]*>.*?<\/svg>/gi, '')
-                .replace(/<math[^>]*>.*?<\/math>/gi, '')
-                .replace(/<img[^>]*>/gi, '')
-                .replace(/<video[^>]*>.*?<\/video>/gi, '')
-                .replace(/<audio[^>]*>.*?<\/audio>/gi, '')
-                .replace(/<canvas[^>]*>.*?<\/canvas>/gi, '')
-                .replace(/<details[^>]*>.*?<\/details>/gi, '')
-                .replace(/<summary[^>]*>.*?<\/summary>/gi, '')
-                .replace(/<style[^>]*>.*?<\/style>/gi, '')
-                .replace(/<link[^>]*>/gi, '')
-                .replace(/<meta[^>]*>/gi, '')
-                .replace(/<base[^>]*>/gi, '');
-            
-            // 第二階段：移除所有事件處理器和危險協議
-            cleaned = cleaned
-                .replace(/\son\w+\s*=\s*[^>\s]*/gi, '')
-                .replace(/\son\w+\s*=\s*["'][^"']*["']/gi, '')
-                .replace(/javascript:/gi, '')
-                .replace(/vbscript:/gi, '')
-                .replace(/data:/gi, '')
-                .replace(/href\s*=\s*["'][^"']*javascript[^"']*["']/gi, '')
-                .replace(/href\s*=\s*["'][^"']*vbscript[^"']*["']/gi, '')
-                .replace(/href\s*=\s*["'][^"']*data[^"']*["']/gi, '');
-            
-            // 第三階段：白名單標籤過濾 - 只保留安全的標籤
-            const tagRegex = /<\/?([a-zA-Z][a-zA-Z0-9]*)[^>]*>/g;
-            cleaned = cleaned.replace(tagRegex, (match, tagName) => {
-                if (allowedTags.includes(tagName.toLowerCase())) {
-                    // 對於允許的標籤，移除所有屬性（除了 span 的 class）
-                    if (tagName.toLowerCase() === 'span') {
-                        const classMatch = match.match(/class\s*=\s*["']([^"']*)["']/i);
-                        if (classMatch && /^[a-zA-Z0-9\s\-_]+$/.test(classMatch[1])) {
-                            return match.startsWith('</') ? `</${tagName}>` : `<${tagName} class="${classMatch[1]}">`;
-                        }
-                    }
-                    return match.startsWith('</') ? `</${tagName}>` : `<${tagName}>`;
-                }
-                return ''; // 移除不在白名單中的標籤
-            });
-            
-            return cleaned;
+            // 檢查 DOMPurify 是否可用
+            if (typeof DOMPurify !== 'undefined') {
+                // 使用 DOMPurify 進行安全清理
+                return DOMPurify.sanitize(html, {
+                    ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'span', 'br', 'a'],
+                    ALLOWED_ATTR: ['class', 'href'],
+                    ALLOWED_URI_REGEXP: /^(?:https?:|mailto:|tel:)/i,
+                    FORBID_TAGS: ['script', 'iframe', 'object', 'embed'],
+                    FORBID_ATTR: ['onclick', 'onerror', 'onload'],
+                    KEEP_CONTENT: true,
+                    RETURN_DOM: false
+                });
+            } else {
+                // 降級到基礎 HTML 實體編碼（如果 DOMPurify 未載入）
+                this.logSecurityEvent('sanitizeHTML', 'DOMPurify not available, using fallback', { html: html.substring(0, 50) });
+                return this.sanitizeInput(html, 'text');
+            }
         },
 
         /**
          * URL驗證 - 驗證URL安全性
          * @param {string} url - 待驗證的URL
+         * @param {Array} allowedOrigins - 允許的來源白名單（可選，用於防止 Open Redirect）
          * @returns {boolean} 是否為安全URL
          */
-        validateURL: function(url) {
+        validateURL: function(url, allowedOrigins = []) {
+            // 調試日誌：記錄所有調用
+            console.log('[DEBUG] validateURL called with:', { 
+                url: url, 
+                allowedOrigins: allowedOrigins.length,
+                origins: allowedOrigins.slice(0, 3) // 只顯示前3個避免日誌過長
+            });
+            
             try {
                 if (typeof url !== 'string' || !url.trim()) {
                     this.logSecurityEvent('validateURL', 'Invalid URL format', { url: typeof url });
@@ -162,10 +128,19 @@
                     return false;
                 }
                 
-                // 防止javascript:和data:協議
-                if (urlObj.protocol === 'javascript:' || urlObj.protocol === 'data:') {
-                    this.logSecurityEvent('validateURL', 'Dangerous protocol blocked', { protocol: urlObj.protocol });
-                    return false;
+                // Open Redirect 防護：檢查 Origin 白名單（僅對 http/https 協議）
+                if (allowedOrigins.length > 0 && ['http:', 'https:'].includes(urlObj.protocol)) {
+                    // 預設允許當前網站的 origin
+                    const defaultAllowed = [window.location.origin];
+                    const combinedAllowed = [...new Set([...defaultAllowed, ...allowedOrigins])];
+                    
+                    if (!combinedAllowed.includes(urlObj.origin)) {
+                        this.logSecurityEvent('validateURL', 'Cross-origin URL blocked', { 
+                            origin: urlObj.origin, 
+                            allowed: combinedAllowed 
+                        });
+                        return false;
+                    }
                 }
                 
                 return true;
@@ -202,6 +177,8 @@
          */
         logSecurityEvent: function(function_name, event, details = {}) {
             const timestamp = new Date().toISOString();
+            const stack = new Error().stack;
+            
             const logEntry = {
                 timestamp: timestamp,
                 function: function_name,
@@ -209,6 +186,11 @@
                 details: details,
                 userAgent: navigator.userAgent.substring(0, 100) // 限制長度
             };
+            
+            // 增強的調試輸出
+            console.warn('[SECURITY]', timestamp, '-', function_name + ':', event);
+            console.warn('[SECURITY] Details:', details);
+            console.warn('[SECURITY] Call Stack:', stack.split('\n').slice(1, 4)); // 只顯示前3層堆疊
             
             // 開發環境：輸出到控制台
             if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
@@ -257,14 +239,15 @@
          * @param {HTMLElement} element - 目標元素
          * @param {string} attribute - 屬性名稱
          * @param {string} value - 屬性值
+         * @param {Array} allowedOrigins - 允許的來源列表（可選）
          */
-        setSecureAttribute: function(element, attribute, value) {
+        setSecureAttribute: function(element, attribute, value, allowedOrigins = []) {
             if (!element || typeof attribute !== 'string' || typeof value !== 'string') return;
             
             // 對 href, src 等 URL 屬性進行特殊處理
             if (attribute.toLowerCase() === 'href' || attribute.toLowerCase() === 'src') {
                 // 1. 直接驗證原始值（不先編碼）
-                if (this.validateURL(value)) {
+                if (this.validateURL(value, allowedOrigins)) {
                     element.setAttribute(attribute, value);
                 } else {
                     // 如果驗證失敗，記錄事件並設置安全的預設值

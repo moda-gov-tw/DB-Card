@@ -538,7 +538,37 @@ function createSocialElement(platform, url, buttonText, brandColor, displayUrl =
     link.textContent = buttonText;
     
     // 安全URL驗證 - 修補Open Redirect弱點
-    if (typeof SecurityUtils !== 'undefined' && SecurityUtils.validateURL(url)) {
+    // 社群媒體連結需要允許外部域名
+    const allowedSocialOrigins = [
+        'https://facebook.com',
+        'https://www.facebook.com',
+        'https://m.facebook.com',
+        'https://fb.com',
+        'https://www.fb.com',
+        'https://instagram.com',
+        'https://www.instagram.com',
+        'https://m.instagram.com',
+        'https://line.me',
+        'https://github.com',
+        'https://www.github.com',
+        'https://twitter.com',
+        'https://www.twitter.com',
+        'https://m.twitter.com',
+        'https://x.com',
+        'https://www.x.com',
+        'https://linkedin.com',
+        'https://www.linkedin.com',
+        'https://m.linkedin.com',
+        'https://youtube.com',
+        'https://www.youtube.com',
+        'https://m.youtube.com',
+        'https://youtu.be',
+        'https://discord.gg',
+        'https://discord.com',
+        'https://www.discord.com'
+    ];
+    
+    if (typeof SecurityUtils !== 'undefined' && SecurityUtils.validateURL(url, allowedSocialOrigins)) {
         link.href = url;
     } else {
         // 如果URL不安全，使用安全的預設值或不設置href

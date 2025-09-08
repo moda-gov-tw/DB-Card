@@ -504,7 +504,7 @@
             if (socialNote) {
                 // 使用簡化版的社群連結處理
                 const processedLinks = processSocialLinksPreview(socialNote);
-                previewContent.innerHTML = processedLinks;
+                SecurityUtils.safeRender(previewContent, processedLinks, true);
                 previewElement.style.display = 'block';
             } else {
                 previewElement.style.display = 'none';

@@ -4,12 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>數位發展部數位名片</title>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https:; object-src 'none';">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&family=Noto+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="assets/qrcode.min.js"></script>
     <link rel="stylesheet" href="assets/qrcode-style.css">
     <link rel="stylesheet" href="assets/high-accessibility.css">
+    <script src="assets/dompurify.min.js"></script>
     <script src="assets/security-utils.js"></script>
         <script src="assets/bilingual-common.js"></script>
     <style>
@@ -558,7 +560,7 @@
             updateElement('vcardGuideTitle', text.vcardGuideTitle);
             const vcardGuideContent = document.getElementById('vcardGuideContent');
             if (vcardGuideContent) {
-                vcardGuideContent.innerHTML = text.vcardGuideContent;
+                SecurityUtils.safeRender(vcardGuideContent, text.vcardGuideContent, true);
             }
             
             // 更新社群標題

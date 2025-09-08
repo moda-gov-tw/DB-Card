@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Accessibility 修補驗證</title>
+    <script src="../assets/dompurify.min.js"></script>
     <script src="../assets/security-utils.js"></script>
     <script src="../assets/bilingual-common.js"></script>
 </head>
@@ -57,18 +58,19 @@
             const resultsDiv = document.getElementById('test-results');
             const passCount = results.filter(r => r.pass).length;
             
-            resultsDiv.innerHTML = `
+            const resultHTML = `
                 <h2>Accessibility測試結果: ${passCount}/${results.length} 通過</h2>
                 ${results.map(result => `
                     <div style="margin: 10px 0; padding: 10px; border: 1px solid ${result.pass ? 'green' : 'red'};">
-                        <h3>${result.test}: ${result.pass ? '✅ PASS' : '❌ FAIL'}</h3>
-                        <p>${result.details}</p>
+                        <h3>${SecurityUtils.sanitizeInput(result.test, 'text')}: ${result.pass ? '✅ PASS' : '❌ FAIL'}</h3>
+                        <p>${SecurityUtils.sanitizeInput(result.details, 'text')}</p>
                     </div>
                 `).join('')}
                 
                 <h3>視覺檢查:</h3>
                 <p>上方應顯示一個正常的LinkedIn連結和一個灰色禁用的Malicious連結</p>
             `;
+            SecurityUtils.safeRender(resultsDiv, resultHTML, true);
         }
         
         // 執行測試

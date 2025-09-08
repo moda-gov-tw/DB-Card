@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>DOMPurify Integration Test</title>
+    <script src="assets/dompurify.min.js"></script>
+    <script src="assets/security-utils.js"></script>
+</head>
+<body>
+    <h1>DOMPurify Integration Test</h1>
+    <div id="results"></div>
+    
+    <script>
+        const results = [];
+        const maliciousInputs = [
+            '<img src=x onerror=alert(1)>',
+            '<svg onload=alert(1)>',
+            '<script>alert("XSS")<\/script>',
+            '<a href="javascript:alert(1)">Click</a>',
+            '<b>Safe content</b>',
+            '<span class="test">Safe span</span>'
+        ];
+
+        console.log('Testing DOMPurify integration...');
+        
+        maliciousInputs.forEach((input, i) => {
+            try {
+                const cleaned = SecurityUtils.sanitizeHTML(input);
+                const isSafe = !cleaned.includes('onerror') && 
+                              !cleaned.includes('onload') && 
+                              !cleaned.includes('javascript:') &&
+                              !cleaned.includes('<script');
+                
+                results.push({
+                    test: i + 1,
+                    input: input,
+                    output: cleaned,
+                    safe: isSafe,
+                    status: isSafe ? 'PASS' : 'FAIL'
+                });
+            } catch (error) {
+                results.push({
+                    test: i + 1,
+                    input: input,
+                    error: error.message,
+                    status: 'ERROR'
+                });
+            }
+        });
+
+        // 顯示結果
+        const resultsDiv = document.getElementById('results');
+        results.forEach(result => {
+            const div = document.createElement('div');
+            const statusSymbol = result.status === 'PASS' ? 'PASS' : 'FAIL';
+            
+            div.innerHTML = 
+                '<h3>Test ' + result.test + ': ' + statusSymbol + '</h3>' +
+                '<p><strong>Input:</strong> ' + result.input.replace(/</g, '&lt;') + '</p>' +
+                '<p><strong>Output:</strong> ' + (result.output || result.error || '').replace(/</g, '&lt;') + '</p>' +
+                '<hr>';
+            resultsDiv.appendChild(div);
+        });
+
+        // 檢查 DOMPurify 是否正確載入
+        console.log('DOMPurify available:', typeof DOMPurify !== 'undefined');
+        console.log('SecurityUtils available:', typeof SecurityUtils !== 'undefined');
+        
+        const passCount = results.filter(r => r.status === 'PASS').length;
+        console.log('Test results: ' + passCount + '/' + results.length + ' passed');
+        
+        if (passCount === results.length) {
+            document.body.style.backgroundColor = '#d4edda';
+            console.log('All tests passed - DOMPurify integration successful');
+        } else {
+            document.body.style.backgroundColor = '#f8d7da';
+            console.log('Some tests failed - check configuration');
+        }
+    </script>
+</body>
+</html>

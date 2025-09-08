@@ -154,21 +154,22 @@ X: @yourtwitterhandle</pre>
             const output = document.getElementById('outputArea');
             
             if (!input.trim()) {
-                output.innerHTML = '<em style="color: #6c757d;">請輸入測試資料</em>';
+                SecurityUtils.safeRender(output, '<em style="color: #6c757d;">請輸入測試資料</em>', true);
                 return;
             }
             
             try {
                 const processed = processSocialLinks(input);
-                output.innerHTML = processed.replace(/\n/g, '<br>');
+                SecurityUtils.safeRender(output, processed.replace(/\n/g, '<br>'), true);
             } catch (error) {
-                output.innerHTML = `<span style="color: #dc3545;">錯誤: ${error.message}</span>`;
+                SecurityUtils.safeRender(output, `<span style="color: #dc3545;">錯誤: ${SecurityUtils.sanitizeInput(error.message, 'text')}</span>`, true);
             }
         }
         
         function clearTest() {
             document.getElementById('inputText').value = '';
-            document.getElementById('outputArea').innerHTML = '點擊「處理連結」按鈕查看結果...';
+            const outputArea = document.getElementById('outputArea');
+            outputArea.textContent = '點擊「處理連結」按鈕查看結果...';
         }
         
         function loadExample(type) {

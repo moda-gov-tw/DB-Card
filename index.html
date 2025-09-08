@@ -5,11 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' fonts.googleapis.com; font-src 'self' fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self';">
     <title>數位發展部數位名片</title>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https:; object-src 'none';">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script src="assets/qrcode.min.js"></script>
-    <script src="assets/security-utils.js"></script>
+    <script src="assets/qrcode.min.js" 
+            integrity="sha384-3zSEDfvllQohrq0PHL1fOXJuC/jSOO34H46t6UQfobFOmxE5BpjjaIJY5F2/bMnU" 
+            crossorigin="anonymous"></script>
+    <script src="assets/dompurify.min.js" 
+            integrity="sha384-rneZSW/1QE+3/U5/u+/7eRNi/tRc+SzS+yXy36fltr1tDN9EHaVo1Bwz2Z8o8DA4" 
+            crossorigin="anonymous"></script>
+    <script src="assets/security-utils.js" 
+            integrity="sha384-9t8UQGl/vQXJWd0ZJlecOG7jHRPVTboKNiQTs/+isNhYQhHWcyTptCiQXIy8OnhS" 
+            crossorigin="anonymous"></script>
     <link rel="stylesheet" href="assets/qrcode-style.css">
     <style>
         * {

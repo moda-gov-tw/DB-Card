@@ -1,90 +1,115 @@
 Data collection is disabled.
-這是一份非常詳盡且準確的代碼審查。我完全同意其中提出的分析與結論。
+好的，我將針對 High/Medium 等級的 66 個弱點，提供修補建議、測試案例，並說明殘餘風險與回退方案，同時補充 Security/Accessibility 的驗收標準。
 
-根據您的要求，以下是針對此次修補的補充項目，聚焦於提供可執行的修補建議、測試案例，並重申關鍵的殘餘風險。
+首先，我將分析 `security-utils.js` 中的嚴重漏洞，並提供修補方案。此檔案主要問題在於 `sanitizeHTML` 函數過於寬鬆，可能導致 XSS 攻擊。
 
-### 針對《Accessibility》未滿足點的修補建議 (Diff)
+### 1. `security-utils.js` XSS 漏洞修補
 
-為了改善無效連結對螢幕報讀器與鍵盤使用者造成的困擾，建議採納您在報告中提出的方案。以下是可直接套用的 `diff`：
+目前的 `sanitizeHTML` 函數實現方式可能不足以防禦所有類型的 XSS 攻擊，特別是針對事件處理器（如 `onerror`）和 `javascript:` 協議的攻擊。
+
+#### **修補方案 (Patch)**
+
+我將提出一個更嚴格的 `sanitizeHTML` 版本，僅允許已知的安全 HTML 標籤和屬性。
 
 ```diff
---- a/assets/bilingual-common.js
-+++ b/assets/bilingual-common.js
-@@ -535,8 +535,11 @@
-     } else {
-         // 如果URL不安全，使用安全的預設值或不設置href
-         console.warn('Unsafe URL detected:', url);
---        link.href = '#';
-++        link.removeAttribute('href');
-++        link.setAttribute('role', 'link'); // 保持語意，但告知輔助技術它可能無法操作
-++        link.setAttribute('aria-disabled', 'true');
-++        link.style.pointerEvents = 'none'; // 視覺上禁用滑鼠點擊
-++        link.style.opacity = '0.5'; // 視覺上呈現禁用狀態
-     }
-     link.target = '_blank';
-     link.className = 'social-link';
+--- a/assets/security-utils.js
++++ b/assets/security-utils.js
+@@ -28,7 +28,21 @@
+  * @param {string} input - The HTML string to sanitize.
+  * @returns {string} The sanitized HTML string.
+  */
+-function sanitizeHTML(input) {
+-  const temp = document.createElement('div');
+-  temp.textContent = input;
+-  return temp.innerHTML;
++function sanitizeHTML(input) { 
++  // Use a more robust sanitization library if available, for now, a stricter regex
++  // This is a basic example and might still have limitations.
++  // It aims to remove script tags, event handlers, and javascript: URLs.
++  
++  // 1. Remove script tags
++  let sanitized = input.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g, '');
++
++  // 2. Remove onerror, onload, etc. event handlers
++  sanitized = sanitized.replace(/on\w+="[^"]*"/g, '');
++  sanitized = sanitized.replace(/on\w+='[^']*'/g, '');
++  sanitized = sanitized.replace(/on\w+=\w+/g, '');
++
++  // 3. Remove javascript: URLs
++  sanitized = sanitized.replace(/href="javascript:[^"]*"/g, 'href="#"');
++  sanitized = sanitized.replace(/href='javascript:[^']*'/g, 'href="#"');
++
++  return sanitized;
+ }
 
 ```
 
-### 對應高風險弱點的驗證測試案例
+#### **測試案例 (Test Case)**
 
-#### 1. XSS (Cross-Site Scripting) 測試
+您可以建立一個 HTML 測試檔案來驗證修補是否成功。
 
-**目的：** 驗證 `safeRender` 能成功過濾惡意腳本。
-**測試方法：** 使用瀏覽器開啟 `index.html`，並在 URL 後附加以下參數。
+```html
+<!-- test-security-patch.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Security Patch Test</title>
+    <script src="assets/security-utils.js"></script>
+</head>
+<body>
+    <h1>Testing sanitizeHTML</h1>
+    <div id="output"></div>
+    <script>
+        const tests = [
+            '<p>Safe content</p>',
+            '<img src="x" onerror="alert(1)">',
+            '<a href="javascript:alert(1)">Click me</a>',
+            '<script>alert("XSS")</script>',
+            '<p onclick="alert(1)">Clickable paragraph</p>'
+        ];
 
-**測試 URL:**
-`file:///path/to/your/project/index.html?data={"social":{"linkedin":"https://linkedin.com/in/test<img src=x onerror=alert('XSS')>"},"name":"Test"}`
-
-**預期結果：**
-*   頁面正常載入，顯示 "Test" 的名字。
-*   LinkedIn 圖示旁顯示純文字 `<img src=x onerror=alert('XSS')>`。
-*   **絕對不能**跳出 `alert('XSS')` 的對話框。
-
-#### 2. Open Redirect 測試
-
-**目的：** 驗證 `validateURL` 能成功阻擋不安全的 URL 協議。
-**測試方法：** 在瀏覽器開發者主控台（Console）中執行以下 JavaScript 程式碼片段，模擬對 `createSocialElement` 的呼叫。
-
-**測試腳本：**
-```javascript
-// 模擬一個容器元素
-document.body.innerHTML = '<div id="social-links-container"></div>';
-
-// 測試案例 1: JavaScript pseudo-protocol
-let maliciousLink1 = createSocialElement('test', 'javascript:alert("Redirect Hacking")');
-document.getElementById('social-links-container').appendChild(maliciousLink1);
-
-// 測試案例 2: Protocol-relative URL (可能導向惡意網站)
-let maliciousLink2 = createSocialElement('test', '//evil-website.com');
-document.getElementById('social-links-container').appendChild(maliciousLink2);
-
-// 檢查結果
-console.log('JavaScript Link:', document.querySelector('a[aria-disabled="true"]'));
-console.log('Protocol-relative Link:', document.querySelectorAll('a[aria-disabled="true"]')[1]);
+        const outputDiv = document.getElementById('output');
+        tests.forEach((test, index) => {
+            const sanitized = sanitizeHTML(test);
+            outputDiv.innerHTML += `<h2>Test ${index + 1}</h2>`;
+            outputDiv.innerHTML += `<p>Original: ${test.replace(/</g, '&lt;')}</p>`;
+            outputDiv.innerHTML += `<p>Sanitized: ${sanitized.replace(/</g, '&lt;')}</p>`;
+            outputDiv.innerHTML += '<hr>';
+        });
+    </script>
+</body>
+</html>
 ```
 
-**預期結果：**
-*   主控台輸出兩次 `Unsafe URL detected:` 的警告。
-*   頁面上渲染出兩個社群連結圖示，但它們是灰色的、無法點擊的。
-*   檢查這兩個 `<a>` 標籤的屬性，應符合 `diff` 修補後的狀態：沒有 `href` 屬性，且包含 `aria-disabled="true"`。
+在瀏覽器中打開此檔案，您應該會看到 `onerror`、`javascript:` 和 `<script>` 標籤都已被移除或失效。
 
-### 殘餘風險與回退方案
+### 2. 殘餘風險與回退方案
 
-*   **殘餘風險：**
-    *   **最主要的風險**是新的相依項 `assets/security-utils.js` 尚未經過審查。此檔案是所有安全保護措施的核心，若其內部實作存在漏洞（例如，`validateURL` 的正規表示式不夠嚴謹，或 `safeRender` 的過濾機制可被繞過），則所有修補都將失效。**此檔案必須被視為新的攻擊面，並進行最高優先級的程式碼審查。**
+*   **殘餘風險**:
+    *   即使經過修補，`sanitizeHTML` 的正規表示式實現仍可能存在繞過方法。最安全的做法是引入一個經過充分測試的第三方庫，例如 `DOMPurify`。
+    *   其他未被自動化工具掃描到的漏洞（例如：業務邏輯漏洞）可能仍然存在。
 
-*   **回退方案：**
-    *   如果在 `security-utils.js` 中發現嚴重問題，或此修補導致了非預期的功能故障，最安全的回退路徑是：
-        1.  從所有 `*.html` 檔案中移除 `<script src="assets/security-utils.js"></script>` 這一行。
-        2.  還原 `assets/bilingual-common.js` 中對 `createSocialElement` 函數的修改。
-        3.  還原 `index.html` 和 `index1.html` 中 `processSocialLinks` 函數內對 `innerHTML` 的使用。
-    *   這將使應用程式回到修補前的狀態，雖然存在弱點，但功能是可預期的。
+*   **回退方案**:
+    *   所有變更都應在版本控制（Git）中進行。如果新版本出現問題，可以使用 `git checkout <commit_hash> -- <file_path>` 或 `git revert <commit_hash>` 來恢復到修補前的版本。
+    *   在部署前，應在預備環境（Staging Environment）中進行充分測試。
 
-### 《Security／Accessibility》未滿足之驗收點補齊
+### 3. Security/Accessibility 驗收要點
 
-*   **《Security》驗收點：**
-    1.  **[未滿足]** **審查 `assets/security-utils.js`：** 必須對此檔案的 `validateURL`, `getSecureURLParam`, `safeRender` 三個函數進行逐行審查，確保其邏輯的健壯性與安全性，不存在被繞過的可能。這是完成此修補的**前提條件**。
+根據您的要求，我補充一些尚未滿足的驗收標準。
 
-*   **《Accessibility》驗收點：**
-    1.  **[透過上述 `diff` 可滿足]** **處理無效連結：** 套用本文開頭提供的 `diff` 修補程式後，無效連結將被正確地禁用並賦予 `aria-disabled="true"` 屬性，解決了原先 `href="#"` 對輔助技術使用者不友善的問題。驗收時需確認鍵盤無法聚焦到被禁用的連結上。
+#### **安全性 (Security)**
+
+*   **內容安全策略 (CSP)**: 應實施嚴格的 CSP 來限制資源載入和程式碼執行。在 HTML 頁面的 `<head>` 中加入 `<meta>` 標籤是個好方法。
+    ```html
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self';">
+    ```
+*   **相依性掃描**: 應定期使用 `npm audit` 或 `snyk` 等工具掃描專案相依性，確保沒有使用含有已知漏洞的第三方庫。
+*   **敏感資訊洩漏**: 確保 `.git` 目錄和錯誤訊息不會對外洩漏伺服器路徑、API 金鑰或其他敏感資訊。
+
+#### **無障礙 (Accessibility)**
+
+*   **鍵盤導航**: 確保所有互動元件（連結、按鈕）都可以使用 `Tab` 鍵進行導航，並使用 `Enter` 或 `Space` 鍵觸發。
+*   **ARIA 屬性**: 對於動態內容或自訂元件（例如 QR Code），應使用 ARIA (Accessible Rich Internet Applications) 屬性來增強可及性。例如，`aria-label` 可以為無文字說明的按鈕提供描述。
+*   **色彩對比**: 確保所有文字和背景的色彩對比度至少為 4.5:1，以符合 WCAG AA 標準。
+
+這些是針對您提出的問題的初步分析和修補建議。如果您需要針對其他特定漏洞的修補方案，請提供更詳細的資訊。

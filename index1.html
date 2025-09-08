@@ -6,10 +6,12 @@
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' fonts.googleapis.com; font-src 'self' fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self';">
     
     <title>數位發展部數位名片</title>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https:; object-src 'none';">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="assets/qrcode.min.js"></script>
+    <script src="assets/dompurify.min.js"></script>
     <script src="assets/security-utils.js"></script>
     <link rel="stylesheet" href="assets/qrcode-style.css">
     <style>
@@ -720,12 +722,11 @@
                 while (socialInfoContent.firstChild) {
                     socialInfoContent.removeChild(socialInfoContent.firstChild);
                 }
-                // 由於 processSocialLinks 返回 HTML 字符串，我們需要安全地解析它
-                const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = processedContent;
-                while (tempDiv.firstChild) {
-                    socialInfoContent.appendChild(tempDiv.firstChild);
+                // 使用安全渲染替代不安全的innerHTML
+                while (socialInfoContent.firstChild) {
+                    socialInfoContent.removeChild(socialInfoContent.firstChild);
                 }
+                SecurityUtils.safeRender(socialInfoContent, processedContent, true);
                 socialInfoSection.style.display = 'block';
             } else {
                 socialInfoSection.style.display = 'none';
