@@ -405,6 +405,14 @@ A: 下載 vCard 後，請依照不同裝置操作：
 - **Apple 裝置**：開啟檔案後，請記得不要按左上方的「完成」，要下拉到「加入聯絡人」選項。
 - **雙語版本**：依照當前顯示語言產生對應語言的聯絡人檔案。自動產生正確的連結格式。
 
+## 🙏 特別感謝
+
+感謝以下開源專案為本專案提供強大的技術支援：
+
+- **[DOMPurify](https://github.com/cure53/DOMPurify)** - 提供業界標準的 HTML 清理功能，有效防禦 XSS 攻擊，保護使用者安全
+- **[qrcode.js](https://github.com/davidshimjs/qrcodejs)** - 提供純前端 QR 碼生成功能，實現完全離線運作
+- **[Google Fonts](https://fonts.google.com/)** - 提供高品質的 Noto Sans 字體，支援多語言顯示
+
 ## 🤝 貢獻指南
 
 歡迎提交 Issue 和 Pull Request！
@@ -430,6 +438,12 @@ A: 下載 vCard 後，請依照不同裝置操作：
   - 來源：https://fonts.google.com/noto/specimen/Noto+Sans+TC
 
 #### JavaScript 函式庫
+- **DOMPurify (v3.0.5)**
+  - 來源：https://github.com/cure53/DOMPurify
+  - 用途：HTML 清理與 XSS 防護（v2.1.1 安全強化）
+  - 授權：Apache License 2.0 / Mozilla Public License 2.0
+  - 特色：業界標準 HTML 淨化，防禦 DOM XSS 攻擊
+
 - **qrcode.js (v1.0.0)**
   - 來源：https://github.com/davidshimjs/qrcodejs
   - 用途：純前端 QR 碼生成（v2.1.0 新增本地支援）
