@@ -11,3 +11,5 @@
 | CTX-002 | Create REQUEST_MAP.md | CTX-001 | security requests | request mapping | COMPLETE | Source/Intent/Owner mapped |
 | CTX-003 | Build TASK_MAP.md | CTX-001 | task breakdown | task tracking | COMPLETE | Dependencies & acceptance defined |
 | JS-001 | Fix tel: link syntax errors | - | git diff | syntax fix | COMPLETE | JavaScript errors eliminated, tel: links functional |
+| WCAG-001 | Implement ARIA labels and semantic roles | - | HTML files | accessibility enhancement | COMPLETE | Avatar alt text, card role="main", aria-label added |
+| SEC-005 | Upgrade DOMPurify to fix security vulnerabilities | - | DOMPurify 3.0.5 | DOMPurify 3.2.4+ | COMPLETE | CVE-2024-47875, CVE-2024-45801, CVE-2025-26791, WS-2024-0017 resolved |

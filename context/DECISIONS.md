@@ -34,3 +34,24 @@
 - Context: Missing closing parentheses in SecurityUtils.setSecureAttribute calls breaking phone link functionality
 - Decision: Add missing `)` characters to complete function calls in index-personal-en.html and index1-en.html
 - Consequences: Restores click-to-call functionality, eliminates console errors
+
+## Decision: Implement WCAG accessibility improvements
+- Date: 2025-09-09
+- Status: ACCEPTED
+- Context: Enhance accessibility compliance for screen readers and assistive technologies
+- Decision: Add ARIA labels, semantic roles, and alt text across all HTML files
+- Consequences: Improved screen reader support, better semantic structure, WCAG 2.1 AA compliance
+
+## Decision: Upgrade DOMPurify to 3.2.4 for critical security patches
+- Date: 2025-09-09
+- Status: ACCEPTED
+- Context: DOMPurify 3.0.5 has 4 critical vulnerabilities (CVE-2024-47875: Critical, CVE-2024-45801: High, CVE-2025-26791: Medium, WS-2024-0017: Medium)
+- Decision: Upgrade from DOMPurify 3.0.5 to 3.2.4, maintain SecurityUtils compatibility
+- Consequences: Patches nesting-based mXSS, depth checking bypass, template literal regex errors, and sanitizer bypass vulnerabilities. Maintains existing SecurityUtils integration.
+
+## Decision: Remove SRI integrity attributes for local resources
+- Date: 2025-09-09
+- Status: ACCEPTED
+- Context: All JavaScript resources are local assets under developer control, SRI provides limited additional security for same-origin resources
+- Decision: Remove SRI integrity and crossorigin attributes from all local script tags in index.html for consistency with other HTML files
+- Consequences: Simplified maintenance (no hash recalculation needed), consistent approach across all HTML files, reduced deployment complexity while maintaining security through same-origin policy
