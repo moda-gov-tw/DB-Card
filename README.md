@@ -468,11 +468,14 @@ A: 下載 vCard 後，請依照不同裝置操作：
 
 ### 第三方元件授權
 
+**完整授權條款請參閱 [licenses/](licenses/) 資料夾**
+
 #### 字體服務
 - **Google Fonts (Noto Sans TC & Noto Sans)**
   - 授權：SIL Open Font License 1.1
   - 用途：中文與英文字體顯示，高齡友善設計
   - 來源：https://fonts.google.com/noto/specimen/Noto+Sans+TC
+  - 授權檔案：[licenses/Google-Fonts-LICENSE.txt](licenses/Google-Fonts-LICENSE.txt)
 
 #### JavaScript 函式庫
 - **DOMPurify (v3.2.4)**
@@ -480,12 +483,14 @@ A: 下載 vCard 後，請依照不同裝置操作：
   - 用途：HTML 清理與 XSS 防護（v2.1.2+ 關鍵漏洞修復）
   - 授權：Apache License 2.0 / Mozilla Public License 2.0
   - 特色：業界標準 HTML 淨化，防禦 DOM XSS 攻擊
+  - 授權檔案：[licenses/DOMPurify-LICENSE.txt](licenses/DOMPurify-LICENSE.txt)
 
 - **qrcode.js (v1.0.0)**
   - 來源：https://github.com/davidshimjs/qrcodejs
   - 用途：純前端 QR 碼生成（v2.1.0 新增本地支援）
   - 授權：MIT License
   - 特色：完全離線運作，無外部 API 依賴
+  - 授權檔案：[licenses/qrcode-js-LICENSE.txt](licenses/qrcode-js-LICENSE.txt)
 
 #### 政府資源
 - **moda Logo (moda-logo.svg)**

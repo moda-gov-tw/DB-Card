@@ -49,9 +49,9 @@
 - Decision: Upgrade from DOMPurify 3.0.5 to 3.2.4, maintain SecurityUtils compatibility
 - Consequences: Patches nesting-based mXSS, depth checking bypass, template literal regex errors, and sanitizer bypass vulnerabilities. Maintains existing SecurityUtils integration.
 
-## Decision: Remove SRI integrity attributes for local resources
-- Date: 2025-09-09
+## Decision: Create licenses folder for third-party compliance
+- Date: 2025-09-26
 - Status: ACCEPTED
-- Context: All JavaScript resources are local assets under developer control, SRI provides limited additional security for same-origin resources
-- Decision: Remove SRI integrity and crossorigin attributes from all local script tags in index.html for consistency with other HTML files
-- Consequences: Simplified maintenance (no hash recalculation needed), consistent approach across all HTML files, reduced deployment complexity while maintaining security through same-origin policy
+- Context: Legal compliance for third-party library usage
+- Decision: Create licenses/ folder with individual license files for DOMPurify, qrcode.js, and Google Fonts
+- Consequences: Proper license attribution, legal compliance, clear third-party dependency documentation

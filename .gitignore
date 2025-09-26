@@ -1,5 +1,6 @@
 # Task tracking folder
 task/
+progress.md
 
 # macOS
 .DS_Store
@@ -8,8 +9,9 @@ task/
 .vscode/
 .idea/
 
-# Claude Code documentation
-CLAUDE.md
+# Development tools
+.amazonq/
+.claude/
 
 # Temporary files
 *.tmp
