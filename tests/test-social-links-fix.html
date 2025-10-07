@@ -2,8 +2,8 @@
 <html>
 <head>
     <title>社群連結修復測試</title>
-    <script src="assets/dompurify.min.js"></script>
-    <script src="assets/security-utils.js"></script>
+    <script src="../assets/dompurify.min.js"></script>
+    <script src="../assets/security-utils.js"></script>
 </head>
 <body>
     <h1>DOMPurify 社群連結修復測試</h1>
@@ -18,7 +18,7 @@
             
             // 危險連結（應該被過濾）
             { input: '<a href="javascript:alert(1)">XSS</a>', expected: 'block', desc: 'JavaScript協議' },
-            { input: '<a href="data:text/html,<script>alert(1)</script>">Data URI</a>', expected: 'block', desc: 'Data URI' },
+            { input: '<a href="data:text/html,%3Cscript%3Ealert(1)%3C/script%3E">Data URI</a>', expected: 'block', desc: 'Data URI' },
             { input: '<a onclick="alert(1)" href="#">Click</a>', expected: 'block', desc: '事件處理器' }
         ];
         
