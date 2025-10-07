@@ -422,7 +422,7 @@
     <div id="card-container" style="display: none;">
         <div class="card" role="main" aria-label="數位名片">
             <!-- 專案連結 -->
-            <a id="projectLink" href="https://github.com/moda-gov-tw/DB-Card" target="_blank" class="project-link">
+            <a id="projectLink" href="https://github.com/moda-gov-tw/DB-Card" target="_blank" rel="noopener noreferrer" class="project-link">
                 🇹🇼 <span id="projectLinkText">moda 開源專案</span>
             </a>
             
@@ -526,60 +526,113 @@
         function renderPersonalCard(data, lang = 'zh') {
             const name = getLocalizedText(data.name, lang);
             const title = getLocalizedText(data.title, lang);
-            
+
             updateElement('userName', name);
             updateElement('userTitle', title);
             updateElement('userDepartment', data.department);
-            
-            // 個人版可能有自訂組織
-            if (data.organization) {
-                updateElement('userOrganization', data.organization);
+
+            // 個人版可能有自訂組織（雙語）
+            if (data.organization && data.organization.trim()) {
+                const orgText = getLocalizedText(data.organization, lang);
+                updateElement('userOrganization', orgText);
                 document.getElementById('userOrganization').style.display = 'block';
             } else {
                 document.getElementById('userOrganization').style.display = 'none';
             }
-            
+
             updateElement('userEmail', data.email);
             if (data.email) {
-                document.getElementById('userEmail').href = `mailto:${data.email}`;
+                const emailLink = document.getElementById('userEmail');
+                if (emailLink) {
+                    safeSetAttribute(emailLink, 'href', `mailto:${data.email}`);
+                }
             }
-            
+
             // 處理電話
             const phoneItem = document.getElementById('phoneItem');
             if (data.phone) {
                 updateElement('userPhone', data.phone);
-                document.getElementById('userPhone').href = `tel:${data.phone.replace(/[^0-9+]/g, '')}`;
+                const phoneLink = document.getElementById('userPhone');
+                if (phoneLink) {
+                    safeSetAttribute(phoneLink, 'href', `tel:${data.phone.replace(/[^0-9+]/g, '')}`);
+                }
                 phoneItem.style.display = 'flex';
             } else {
                 phoneItem.style.display = 'none';
             }
-            
+
             // 處理手機號碼
             const mobileItem = document.getElementById('mobileItem');
             if (data.mobile) {
                 updateElement('userMobile', data.mobile);
-                document.getElementById('userMobile').href = `tel:${data.mobile.replace(/[^0-9+]/g, '')}`;
+                const mobileLink = document.getElementById('userMobile');
+                if (mobileLink) {
+                    safeSetAttribute(mobileLink, 'href', `tel:${data.mobile.replace(/[^0-9+]/g, '')}`);
+                }
                 mobileItem.style.display = 'flex';
             } else {
                 mobileItem.style.display = 'none';
             }
-            
-            // 個人版可能有自訂地址
+
+            // 個人版可能有自訂組織和地址（雙語）
             const orgItem = document.getElementById('orgItem');
             const addressItem = document.getElementById('addressItem');
-            
-            if (data.organization) {
-                updateElement('orgName', data.organization);
+
+            if (data.organization && data.organization.trim()) {
+                const orgText = getLocalizedText(data.organization, lang);
+                updateElement('orgName', orgText);
                 orgItem.style.display = 'flex';
             } else {
                 orgItem.style.display = 'none';
             }
-            
-            if (data.address) {
-                updateElement('orgAddress', data.address);
+
+            if (data.address && data.address.trim()) {
+                const addressText = getLocalizedText(data.address, lang);
+                updateElement('orgAddress', addressText);
                 addressItem.style.display = 'flex';
             } else {
                 addressItem.style.display = 'none';
+            }
+
+            // 處理頭像
+            const avatar = document.getElementById('userAvatar');
+            if (avatar && data.avatar) {
+                if (SecurityUtils) {
+                    const allowedImageOrigins = [
+                        'https://i.imgur.com', 'https://imgur.com',
+                        'https://i.postimg.cc', 'https://postimages.org',
+                        'https://github.com', 'https://raw.githubusercontent.com',
+                        'https://drive.google.com'
+                    ];
+                    safeSetAttribute(avatar, 'src', data.avatar, allowedImageOrigins);
+                    avatar.style.display = 'block';
+                    avatar.onerror = function() {
+                        this.style.display = 'none';
+                    };
+                } else {
+                    console.warn('Avatar loading disabled: SecurityUtils unavailable');
+                }
+            } else if (avatar) {
+                avatar.style.display = 'none';
+            }
+
+            // 處理社群資訊
+            if (data.socialNote && typeof processSocialLinks === 'function') {
+                const socialInfo = document.getElementById('socialInfo');
+                const socialContent = document.getElementById('socialInfoContent');
+                if (socialInfo && socialContent) {
+                    while (socialContent.firstChild) {
+                        socialContent.removeChild(socialContent.firstChild);
+                    }
+                    const socialLinks = processSocialLinks(data.socialNote, lang);
+                    socialContent.appendChild(socialLinks);
+                    socialInfo.style.display = 'block';
+                }
+            } else {
+                const socialInfo = document.getElementById('socialInfo');
+                if (socialInfo) {
+                    socialInfo.style.display = 'none';
+                }
             }
         }
 

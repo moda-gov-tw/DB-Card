@@ -55,3 +55,10 @@
 - Context: Legal compliance for third-party library usage
 - Decision: Create licenses/ folder with individual license files for DOMPurify, qrcode.js, and Google Fonts
 - Consequences: Proper license attribution, legal compliance, clear third-party dependency documentation
+
+## Decision: Add rel='noopener noreferrer' to target='_blank' links
+- Date: 2025-10-07
+- Status: ACCEPTED
+- Context: Low-risk security improvement to prevent tab nabbing and cross-origin information leaks
+- Decision: Add rel='noopener noreferrer' to projectLink anchor in index-bilingual-personal.html:425 and createSocialElement function in assets/bilingual-common.js:605
+- Consequences: Prevents opened windows from accessing window.opener, blocks Referer header leakage, mitigates tab nabbing attacks without affecting functionality

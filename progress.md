@@ -6,6 +6,14 @@
 [x] 更新相關文檔
 [x] 更新 .gitignore 忽略開發工具目錄
 [x] 建立 licenses/ 資料夾並添加第三方授權聲明
+[x] 個人版 organization/address 欄位支援
+
+## 已歸檔任務 - 個人版 organization/address 欄位支援 (2025-10-07)
+✅ **狀態**: 完成
+✅ **實作**: 11欄位編碼格式，向下相容8/9欄位
+✅ **功能**: 個人版自訂org/address，機關版維持預設
+✅ **安全**: 添加rel="noopener noreferrer"防護
+✅ **檔案**: bilingual-common.js, nfc-generator-bilingual.html, index-bilingual-personal.html
 
 ## 子程序任務（Q CLI 非互動）
 [x] Preflight — 安全漏洞評估完成

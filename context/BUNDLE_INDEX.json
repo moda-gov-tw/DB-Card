@@ -1,15 +1,14 @@
 {
-  "bundle_id": "license-compliance-2025-09-26",
+  "bundle_id": "personal-org-addr-fields-2025-10-07",
   "files": [
-    "licenses/DOMPurify-LICENSE.txt",
-    "licenses/qrcode-js-LICENSE.txt", 
-    "licenses/Google-Fonts-LICENSE.txt",
-    "README.md",
+    "assets/bilingual-common.js",
+    "nfc-generator-bilingual.html", 
+    "index-bilingual-personal.html",
     "progress.md",
     "context/DECISIONS.md"
   ],
-  "tags": ["legal", "compliance", "licenses", "third-party"],
-  "updated_at": "2025-09-26T02:49:00Z",
-  "summary": "Create licenses folder with third-party license declarations",
+  "tags": ["feature", "personal-layout", "organization", "address", "vcard", "bilingual"],
+  "updated_at": "2025-10-07T10:23:00Z",
+  "summary": "Add organization/address fields support for personal layout with vCard consistency",
   "status": "COMPLETE"
 }

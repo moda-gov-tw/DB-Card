@@ -49,9 +49,11 @@ function encodeCompact(data) {
         data.mobile || '',
         data.avatar || '',
         (data.greetings || []).join(','),
-        data.socialNote || ''
+        data.socialNote || '',
+        data.organization || '',
+        data.address || ''
     ].join('|');
-    
+
     return btoa(encodeURIComponent(compact))
         .replace(/\+/g, '-')
         .replace(/\//g, '_')
@@ -67,9 +69,9 @@ function decodeCompact(encoded) {
         const compact = decodeURIComponent(atob(
             encoded.replace(/-/g, '+').replace(/_/g, '/') + padding
         ));
-        
+
         const parts = compact.split('|');
-        
+
         // 檢查是否為舊版本格式（8個欄位，沒有手機號碼）
         if (parts.length === 8) {
             return {
@@ -81,11 +83,30 @@ function decodeCompact(encoded) {
                 mobile: '', // 舊版本沒有手機號碼
                 avatar: parts[5] || '',
                 greetings: parts[6] ? parts[6].split(',') : [],
-                socialNote: parts[7] || ''
+                socialNote: parts[7] || '',
+                organization: '', // 舊版本沒有組織
+                address: '' // 舊版本沒有地址
             };
         }
-        
-        // 新版本格式（9個欄位，包含手機號碼）
+
+        // 9個欄位格式（包含手機號碼，但無組織/地址）
+        if (parts.length === 9) {
+            return {
+                name: parts[0] || '',
+                title: parts[1] || '',
+                department: parts[2] || '',
+                email: parts[3] || '',
+                phone: parts[4] || '',
+                mobile: parts[5] || '',
+                avatar: parts[6] || '',
+                greetings: parts[7] ? parts[7].split(',') : [],
+                socialNote: parts[8] || '',
+                organization: '', // 9欄位版本沒有組織
+                address: '' // 9欄位版本沒有地址
+            };
+        }
+
+        // 新版本格式（11個欄位，包含組織和地址）
         return {
             name: parts[0] || '',
             title: parts[1] || '',
@@ -95,7 +116,9 @@ function decodeCompact(encoded) {
             mobile: parts[5] || '',
             avatar: parts[6] || '',
             greetings: parts[7] ? parts[7].split(',') : [],
-            socialNote: parts[8] || ''
+            socialNote: parts[8] || '',
+            organization: parts[9] || '',
+            address: parts[10] || ''
         };
     } catch (error) {
         console.error('解碼失敗:', error);
@@ -335,68 +358,93 @@ function updateOrganizationInfo(lang, building = 'yanping') {
 }
 
 /**
+ * 轉義 vCard 文字中的特殊字元
+ */
+function escapeVCardText(text) {
+    if (!text) return '';
+    return text
+        .replace(/\\/g, '\\\\')  // 反斜線
+        .replace(/,/g, '\\,')     // 逗號
+        .replace(/;/g, '\\;')     // 分號
+        .replace(/\n/g, '\\n');   // 換行
+}
+
+/**
  * 生成雙語 vCard
  */
 function generateBilingualVCard(data, lang = 'zh') {
     const name = getLocalizedText(data.name, lang);
     const title = getLocalizedText(data.title, lang);
-    
-    const nameParts = lang === 'zh' && name.length <= 4 ? 
-        [name.charAt(0), name.slice(1)] : 
+
+    const nameParts = lang === 'zh' && name.length <= 4 ?
+        [name.charAt(0), name.slice(1)] :
         name.split(' ');
-    
-    // 檢查是否為新光大樓版本
-    const isXinyiBuilding = window.location.pathname.includes('index1-bilingual') || 
-                           window.location.pathname.includes('index1.html');
-    
-    const orgInfo = {
-        zh: { 
-            name: '數位發展部', 
-            address: isXinyiBuilding ? 
-                '臺北市中正區忠孝西路一段６６號（１７、１９樓）' : 
-                '臺北市中正區延平南路143號'
-        },
-        en: { 
-            name: 'Ministry of Digital Affairs', 
-            address: isXinyiBuilding ? 
-                '66 Zhongxiao W. Rd. Sec. 1, Zhongzheng Dist., Taipei City, Taiwan (17F, 19F)' : 
+
+    // 檢查是否提供自訂組織和地址（個人版）
+    let orgName, orgAddress;
+
+    if (data.organization && data.organization.trim()) {
+        // 使用自訂組織
+        orgName = getLocalizedText(data.organization, lang);
+    } else {
+        // 使用預設機關資訊
+        const orgDefaults = {
+            zh: '數位發展部',
+            en: 'Ministry of Digital Affairs'
+        };
+        orgName = orgDefaults[lang] || orgDefaults.zh;
+    }
+
+    if (data.address && data.address.trim()) {
+        // 使用自訂地址
+        orgAddress = getLocalizedText(data.address, lang);
+    } else {
+        // 使用預設機關地址
+        const isXinyiBuilding = window.location.pathname.includes('index1-bilingual') ||
+                               window.location.pathname.includes('index1.html');
+
+        const addressDefaults = {
+            zh: isXinyiBuilding ?
+                '臺北市中正區忠孝西路一段６６號（１７、１９樓）' :
+                '臺北市中正區延平南路143號',
+            en: isXinyiBuilding ?
+                '66 Zhongxiao W. Rd. Sec. 1, Zhongzheng Dist., Taipei City, Taiwan (17F, 19F)' :
                 '143 Yanping S. Rd., Zhongzheng Dist., Taipei City, Taiwan'
-        }
-    };
-    
-    const org = orgInfo[lang] || orgInfo.zh;
-    
+        };
+        orgAddress = addressDefaults[lang] || addressDefaults.zh;
+    }
+
     const department = translateDepartment(data.department, lang);
-    
+
     // 處理雙語問候語，只保留當前語言
     let greetingNote = '';
     if (data.greetings && data.greetings.length > 0) {
         const localizedGreetings = data.greetings.map(greeting => getLocalizedText(greeting, lang));
-        greetingNote = `NOTE;CHARSET=UTF-8:${localizedGreetings.join(' ')}`;
+        greetingNote = `NOTE;CHARSET=UTF-8:${escapeVCardText(localizedGreetings.join(' '))}`;
     }
-    
+
     // 處理社群連結資訊
     let socialNote = '';
     if (data.socialNote) {
         const socialText = lang === 'zh' ? '社群連結' : 'Social Links';
-        socialNote = `\nNOTE;CHARSET=UTF-8:${socialText}: ${data.socialNote.replace(/\n/g, ' | ')}`;
+        socialNote = `\nNOTE;CHARSET=UTF-8:${socialText}: ${escapeVCardText(data.socialNote.replace(/\n/g, ' | '))}`;
     }
-    
-    const prodId = lang === 'zh' ? 
-        'PRODID:-//moda//NFC 數位名片//ZH' : 
+
+    const prodId = lang === 'zh' ?
+        'PRODID:-//moda//NFC 數位名片//ZH' :
         'PRODID:-//moda//NFC Digital Business Card//EN';
-    
+
     const vcard = `BEGIN:VCARD
 VERSION:3.0
 ${prodId}
-FN;CHARSET=UTF-8:${name}
-N;CHARSET=UTF-8:${nameParts[0] || ''};${nameParts[1] || ''};;;
-ORG;CHARSET=UTF-8:${org.name};${department}
-TITLE;CHARSET=UTF-8:${title}
+FN;CHARSET=UTF-8:${escapeVCardText(name)}
+N;CHARSET=UTF-8:${escapeVCardText(nameParts[0] || '')};${escapeVCardText(nameParts[1] || '')};;;
+ORG;CHARSET=UTF-8:${escapeVCardText(orgName)};${escapeVCardText(department)}
+TITLE;CHARSET=UTF-8:${escapeVCardText(title)}
 EMAIL;TYPE=work:${data.email || ''}
 ${data.phone ? `TEL;TYPE=work,voice:${data.phone}` : ''}
 ${data.mobile ? `TEL;TYPE=cell,voice:${data.mobile}` : ''}
-ADR;TYPE=work;CHARSET=UTF-8:;;${org.address};;;;Taiwan
+ADR;TYPE=work;CHARSET=UTF-8:;;${escapeVCardText(orgAddress)};;;;Taiwan
 ${data.avatar ? `PHOTO;TYPE=JPEG:${data.avatar}` : ''}
 ${greetingNote}${socialNote}
 REV:${new Date().toISOString().replace(/[-:]/g, '').split('.')[0]}Z
@@ -554,6 +602,7 @@ function createSocialElement(platform, url, buttonText, brandColor, displayUrl =
     
     const link = document.createElement('a');
     link.target = '_blank';
+    link.rel = 'noopener noreferrer';
     link.className = 'social-link';
     link.style.cssText = `background: ${brandColor}; color: white; padding: 4px 12px; border-radius: 16px; text-decoration: none; font-size: 0.85em; font-weight: 500;`;
     link.textContent = buttonText;

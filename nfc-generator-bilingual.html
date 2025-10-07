@@ -326,7 +326,33 @@
                     <label>手機號碼：</label>
                     <input type="tel" id="mobile" placeholder="0912-345-678">
                 </div>
-                
+
+                <div class="form-group" id="organizationGroup" style="display: none;">
+                    <label>組織名稱 / Organization：</label>
+                    <div class="input-group">
+                        <div class="lang-label">🇹🇼</div>
+                        <input type="text" id="organizationZh" placeholder="中文組織名稱" maxlength="50">
+                    </div>
+                    <div class="input-group" style="margin-top: 8px;">
+                        <div class="lang-label">🇺🇸</div>
+                        <input type="text" id="organizationEn" placeholder="English Organization" maxlength="60">
+                    </div>
+                    <div class="help-text">個人版專屬：自訂組織名稱，留空則不顯示</div>
+                </div>
+
+                <div class="form-group" id="addressGroup" style="display: none;">
+                    <label>地址 / Address：</label>
+                    <div class="input-group">
+                        <div class="lang-label">🇹🇼</div>
+                        <input type="text" id="addressZh" placeholder="中文地址" maxlength="100">
+                    </div>
+                    <div class="input-group" style="margin-top: 8px;">
+                        <div class="lang-label">🇺🇸</div>
+                        <input type="text" id="addressEn" placeholder="English Address" maxlength="120">
+                    </div>
+                    <div class="help-text">個人版專屬：自訂地址，留空則不顯示</div>
+                </div>
+
                 <div class="form-group">
                     <label>大頭貼 URL：</label>
                     <input type="url" id="avatar" placeholder="https://i.imgur.com/example.jpg" maxlength="200">
@@ -635,6 +661,25 @@
                 return null;
             }
 
+            // 收集組織和地址（僅個人版）
+            const layoutType = document.getElementById('layoutType').value;
+            let organization = '';
+            let address = '';
+
+            if (layoutType === 'personal') {
+                const organizationZh = sanitizeInput(document.getElementById('organizationZh').value.trim());
+                const organizationEn = sanitizeInput(document.getElementById('organizationEn').value.trim());
+                const addressZh = sanitizeInput(document.getElementById('addressZh').value.trim());
+                const addressEn = sanitizeInput(document.getElementById('addressEn').value.trim());
+
+                if (organizationZh || organizationEn) {
+                    organization = `${organizationZh}~${organizationEn}`;
+                }
+                if (addressZh || addressEn) {
+                    address = `${addressZh}~${addressEn}`;
+                }
+            }
+
             return {
                 name: `${nameZh}~${nameEn}`,
                 title: `${titleZh}~${titleEn}`,
@@ -644,7 +689,9 @@
                 mobile: document.getElementById('mobile').value.trim(),
                 avatar: avatar,
                 greetings: bilingualGreetings.map(g => sanitizeInput(g)),
-                socialNote: sanitizeInput(document.getElementById('socialNote').value.trim())
+                socialNote: sanitizeInput(document.getElementById('socialNote').value.trim()),
+                organization: organization,
+                address: address
             };
         }
 
@@ -775,17 +822,25 @@
 
         // 綁定即時監控事件
         document.addEventListener('DOMContentLoaded', function() {
-            const inputs = ['nameZh', 'nameEn', 'titleZh', 'titleEn', 'department', 'email', 'phone', 'mobile', 'avatar', 'greetingsZh', 'greetingsEn', 'socialNote'];
+            const inputs = ['nameZh', 'nameEn', 'titleZh', 'titleEn', 'department', 'email', 'phone', 'mobile', 'organizationZh', 'organizationEn', 'addressZh', 'addressEn', 'avatar', 'greetingsZh', 'greetingsEn', 'socialNote'];
             inputs.forEach(id => {
                 const element = document.getElementById(id);
                 if (element) {
                     element.addEventListener('input', updateCapacityMonitor);
                 }
             });
-            
+
+            // 監聽版面類型切換
+            const layoutTypeSelect = document.getElementById('layoutType');
+            if (layoutTypeSelect) {
+                layoutTypeSelect.addEventListener('change', togglePersonalFields);
+                // 初始化顯示狀態
+                togglePersonalFields();
+            }
+
             // 初始化容量監控
             updateCapacityMonitor();
-            
+
             // 為社群媒體輸入添加即時預覽
             const socialNoteElement = document.getElementById('socialNote');
             if (socialNoteElement) {
@@ -795,6 +850,25 @@
                 });
             }
         });
+
+        // 切換個人版專屬欄位
+        function togglePersonalFields() {
+            const layoutType = document.getElementById('layoutType').value;
+            const isPersonal = layoutType === 'personal';
+
+            const organizationGroup = document.getElementById('organizationGroup');
+            const addressGroup = document.getElementById('addressGroup');
+
+            if (organizationGroup) {
+                organizationGroup.style.display = isPersonal ? 'block' : 'none';
+            }
+            if (addressGroup) {
+                addressGroup.style.display = isPersonal ? 'block' : 'none';
+            }
+
+            // 更新容量監控
+            updateCapacityMonitor();
+        }
         // 生成 QR 碼函數
         function generateQRCode(url) {
             const qrContainer = document.getElementById('qrcode');
