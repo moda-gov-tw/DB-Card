@@ -382,8 +382,9 @@ function generateBilingualVCard(data, lang = 'zh') {
 
     // 檢查是否提供自訂組織和地址（個人版）
     let orgName, orgAddress;
+    const hasCustomOrganization = data.organization && data.organization.trim();
 
-    if (data.organization && data.organization.trim()) {
+    if (hasCustomOrganization) {
         // 使用自訂組織
         orgName = getLocalizedText(data.organization, lang);
     } else {
@@ -439,7 +440,7 @@ VERSION:3.0
 ${prodId}
 FN;CHARSET=UTF-8:${escapeVCardText(name)}
 N;CHARSET=UTF-8:${escapeVCardText(nameParts[0] || '')};${escapeVCardText(nameParts[1] || '')};;;
-ORG;CHARSET=UTF-8:${escapeVCardText(orgName)};${escapeVCardText(department)}
+${hasCustomOrganization ? `ORG;CHARSET=UTF-8:${escapeVCardText(orgName)};${escapeVCardText(department)}` : ''}
 TITLE;CHARSET=UTF-8:${escapeVCardText(title)}
 EMAIL;TYPE=work:${data.email || ''}
 ${data.phone ? `TEL;TYPE=work,voice:${data.phone}` : ''}

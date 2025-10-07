@@ -1,14 +1,14 @@
 {
-  "bundle_id": "personal-org-addr-fields-2025-10-07",
+  "bundle_id": "vcard-consistency-fix-2025-10-07",
   "files": [
     "assets/bilingual-common.js",
-    "nfc-generator-bilingual.html", 
-    "index-bilingual-personal.html",
     "progress.md",
     "context/DECISIONS.md"
   ],
-  "tags": ["feature", "personal-layout", "organization", "address", "vcard", "bilingual"],
-  "updated_at": "2025-10-07T10:23:00Z",
-  "summary": "Add organization/address fields support for personal layout with vCard consistency",
-  "status": "COMPLETE"
+  "tags": ["bugfix", "vcard", "bilingual", "personal-layout", "consistency"],
+  "updated_at": "2025-10-07T15:22:00Z",
+  "summary": "Fix bilingual personal vCard organization field consistency - skip ORG when empty",
+  "status": "CLOSED",
+  "last_bundle_id": "personal-org-addr-fields-2025-10-07",
+  "files_digest": "bilingual-common.js:hasCustomOrganization-conditional-ORG"
 }

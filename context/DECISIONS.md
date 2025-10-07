@@ -62,3 +62,10 @@
 - Context: Low-risk security improvement to prevent tab nabbing and cross-origin information leaks
 - Decision: Add rel='noopener noreferrer' to projectLink anchor in index-bilingual-personal.html:425 and createSocialElement function in assets/bilingual-common.js:605
 - Consequences: Prevents opened windows from accessing window.opener, blocks Referer header leakage, mitigates tab nabbing attacks without affecting functionality
+
+## Decision: Fix bilingual personal vCard organization field consistency
+- Date: 2025-10-07
+- Status: CLOSED
+- Context: Bilingual personal layout vCard generation inconsistency - empty organization still generated default "數位發展部" while monolingual personal layouts skip ORG field when empty
+- Decision: Modify generateBilingualVCard() to conditionally skip ORG field when data.organization is empty, matching monolingual personal layout behavior
+- Consequences: Consistent vCard generation across all personal layouts, no unwanted default organization in personal business cards
