@@ -1,14 +1,14 @@
 {
-  "bundle_id": "vcard-consistency-fix-2025-10-07",
+  "bundle_id": "personal-layout-fixes-2025-10-07",
   "files": [
     "assets/bilingual-common.js",
     "progress.md",
     "context/DECISIONS.md"
   ],
-  "tags": ["bugfix", "vcard", "bilingual", "personal-layout", "consistency"],
-  "updated_at": "2025-10-07T15:22:00Z",
-  "summary": "Fix bilingual personal vCard organization field consistency - skip ORG when empty",
+  "tags": ["bugfix", "personal-layout", "page-title", "organization-info", "consistency"],
+  "updated_at": "2025-10-07T15:54:00Z",
+  "summary": "Fix personal layout page title and organization display consistency",
   "status": "CLOSED",
-  "last_bundle_id": "personal-org-addr-fields-2025-10-07",
-  "files_digest": "bilingual-common.js:hasCustomOrganization-conditional-ORG"
+  "last_bundle_id": "vcard-address-consistency-fix-2025-10-07",
+  "files_digest": "bilingual-common.js:personal-layout-detection-logic"
 }

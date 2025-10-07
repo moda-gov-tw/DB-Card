@@ -190,11 +190,21 @@ function updateLanguageButton(lang) {
  * 更新頁面標題
  */
 function updatePageTitle(lang) {
-    const titleMap = {
-        zh: '數位名片 - 數位發展部',
-        en: 'Digital Business Card - Ministry of Digital Affairs'
-    };
-    document.title = titleMap[lang] || titleMap.zh;
+    // 檢查是否為個人版（有自訂組織資訊）
+    const isPersonalLayout = currentData && currentData.organization && currentData.organization.trim();
+
+    if (isPersonalLayout) {
+        // 個人版：顯示姓名
+        const name = currentData ? getLocalizedText(currentData.name, lang) : '';
+        document.title = name || (lang === 'zh' ? '數位名片' : 'Digital Business Card');
+    } else {
+        // 機關版：顯示機關名稱
+        const titleMap = {
+            zh: '數位名片 - 數位發展部',
+            en: 'Digital Business Card - Ministry of Digital Affairs'
+        };
+        document.title = titleMap[lang] || titleMap.zh;
+    }
 }
 
 /**
@@ -312,13 +322,19 @@ function renderBilingualCard(data, lang = 'zh') {
             socialInfo.style.display = 'none';
         }
     }
-    
-    // 檢查是否為新光大樓版本
-    const isXinyiBuilding = window.location.pathname.includes('index1-bilingual') || 
-                           window.location.pathname.includes('index1.html');
-    const building = isXinyiBuilding ? 'xinyi' : 'yanping';
-    
-    updateOrganizationInfo(lang, building);
+
+    // 檢查是否為個人版（有自訂組織資訊）
+    const isPersonalLayout = data.organization && data.organization.trim();
+
+    // 只有機關版才需要更新組織資訊
+    if (!isPersonalLayout) {
+        // 檢查是否為新光大樓版本
+        const isXinyiBuilding = window.location.pathname.includes('index1-bilingual') ||
+                               window.location.pathname.includes('index1.html');
+        const building = isXinyiBuilding ? 'xinyi' : 'yanping';
+
+        updateOrganizationInfo(lang, building);
+    }
 }
 
 /**
@@ -383,6 +399,7 @@ function generateBilingualVCard(data, lang = 'zh') {
     // 檢查是否提供自訂組織和地址（個人版）
     let orgName, orgAddress;
     const hasCustomOrganization = data.organization && data.organization.trim();
+    const hasCustomAddress = data.address && data.address.trim();
 
     if (hasCustomOrganization) {
         // 使用自訂組織
@@ -396,7 +413,7 @@ function generateBilingualVCard(data, lang = 'zh') {
         orgName = orgDefaults[lang] || orgDefaults.zh;
     }
 
-    if (data.address && data.address.trim()) {
+    if (hasCustomAddress) {
         // 使用自訂地址
         orgAddress = getLocalizedText(data.address, lang);
     } else {
@@ -445,7 +462,7 @@ TITLE;CHARSET=UTF-8:${escapeVCardText(title)}
 EMAIL;TYPE=work:${data.email || ''}
 ${data.phone ? `TEL;TYPE=work,voice:${data.phone}` : ''}
 ${data.mobile ? `TEL;TYPE=cell,voice:${data.mobile}` : ''}
-ADR;TYPE=work;CHARSET=UTF-8:;;${escapeVCardText(orgAddress)};;;;Taiwan
+${hasCustomAddress ? `ADR;TYPE=work;CHARSET=UTF-8:;;${escapeVCardText(orgAddress)};;;;Taiwan` : ''}
 ${data.avatar ? `PHOTO;TYPE=JPEG:${data.avatar}` : ''}
 ${greetingNote}${socialNote}
 REV:${new Date().toISOString().replace(/[-:]/g, '').split('.')[0]}Z

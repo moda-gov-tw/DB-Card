@@ -69,3 +69,17 @@
 - Context: Bilingual personal layout vCard generation inconsistency - empty organization still generated default "數位發展部" while monolingual personal layouts skip ORG field when empty
 - Decision: Modify generateBilingualVCard() to conditionally skip ORG field when data.organization is empty, matching monolingual personal layout behavior
 - Consequences: Consistent vCard generation across all personal layouts, no unwanted default organization in personal business cards
+
+## Decision: Fix bilingual personal vCard address field consistency
+- Date: 2025-10-07
+- Status: CLOSED
+- Context: Bilingual personal layout vCard generation inconsistency - empty address still generated default moda address while personal layouts should skip ADR field when empty
+- Decision: Modify generateBilingualVCard() to conditionally skip ADR field when data.address is empty, matching ORG field logic for personal layout consistency
+- Consequences: Consistent vCard generation across all personal layouts, no unwanted default address in personal business cards
+
+## Decision: Fix bilingual personal layout page title and organization display
+- Date: 2025-10-07
+- Status: CLOSED
+- Context: Personal layout pages incorrectly displayed institutional information - page title showed "Ministry of Digital Affairs" and organization info was updated with institutional defaults
+- Decision: Modify updatePageTitle() to show personal name for personal layouts and skip updateOrganizationInfo() in renderBilingualCard() when data.organization exists
+- Consequences: Personal layouts now display personalized titles and skip institutional organization updates, maintaining clear separation between personal and institutional card types
