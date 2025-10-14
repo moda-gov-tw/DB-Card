@@ -691,9 +691,16 @@
                 }
             };
             
-            avatar.alt = data.name;
-            console.log('Loading avatar:', data.avatar);
-            SecurityUtils.setSecureAttribute(avatar, 'src', data.avatar, [                'https://i.imgur.com',                'https://i.postimg.cc',                 'https://raw.githubusercontent.com',                'https://drive.google.com'            ]);
+            // 檢查是否有頭像資料
+            if (data.avatar && data.avatar.trim()) {
+                avatar.alt = data.name;
+                console.log('Loading avatar:', data.avatar);
+                SecurityUtils.setSecureAttribute(avatar, 'src', data.avatar, [                'https://i.imgur.com',                'https://i.postimg.cc',                 'https://raw.githubusercontent.com',                'https://drive.google.com'            ]);
+            } else {
+                // 沒有頭像資料，隱藏頭像區域
+                console.log('No avatar data provided, hiding avatar');
+                avatar.style.display = 'none';
+            }
             
             // 聯絡資訊
             const emailLink = document.getElementById('user-email');

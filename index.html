@@ -597,72 +597,79 @@
             // 頭像
             const avatar = document.getElementById('user-avatar');
             
-            // 設定載入成功處理
-            avatar.onload = function() {
-                console.log('Avatar loaded successfully:', this.src);
-                this.style.display = 'block';
-            };
-            
-            // 設定載入失敗處理
-            let retryCount = 0;
-            avatar.onerror = function() {
-                console.error('Avatar load failed:', this.src, 'Retry count:', retryCount);
+            // 檢查是否有頭像資料
+            if (data.avatar && data.avatar.trim()) {
+                // 設定載入成功處理
+                avatar.onload = function() {
+                    console.log('Avatar loaded successfully:', this.src);
+                    this.style.display = 'block';
+                };
                 
-                if (retryCount === 0) {
-                    // 第一次失敗，檢查是否為 Google Drive 連結
-                    if (SecurityUtils.isGoogleDriveHostname(data.avatar)) {
-                        const googleDriveDirectUrl = convertGoogleDriveUrl(data.avatar);
-                        if (googleDriveDirectUrl) {
-                            console.log('Trying Google Drive direct URL:', googleDriveDirectUrl);
-                            SecurityUtils.setSecureAttribute(this, 'src', googleDriveDirectUrl);
+                // 設定載入失敗處理
+                let retryCount = 0;
+                avatar.onerror = function() {
+                    console.error('Avatar load failed:', this.src, 'Retry count:', retryCount);
+                    
+                    if (retryCount === 0) {
+                        // 第一次失敗，檢查是否為 Google Drive 連結
+                        if (SecurityUtils.isGoogleDriveHostname(data.avatar)) {
+                            const googleDriveDirectUrl = convertGoogleDriveUrl(data.avatar);
+                            if (googleDriveDirectUrl) {
+                                console.log('Trying Google Drive direct URL:', googleDriveDirectUrl);
+                                SecurityUtils.setSecureAttribute(this, 'src', googleDriveDirectUrl);
+                                retryCount++;
+                                return;
+                            }
+                        }
+                        
+                        // 檢查是否為相對路徑
+                        if (!data.avatar.startsWith('http') && !data.avatar.startsWith('./')) {
+                            console.log('Trying with ./ prefix:', './' + data.avatar);
+                            SecurityUtils.setSecureAttribute(this, 'src', './' + data.avatar);
                             retryCount++;
+                        } else if (data.avatar.startsWith('./')) {
+                            // 移除 ./ 前綴重試
+                            console.log('Trying without ./ prefix:', data.avatar.substring(2));
+                            SecurityUtils.setSecureAttribute(this, 'src', data.avatar.substring(2));
+                            retryCount++;
+                        } else {
+                            // 隱藏圖片
+                            console.log('Cannot resolve avatar path, hiding avatar');
+                            this.style.display = 'none';
                             return;
                         }
-                    }
-                    
-                    // 檢查是否為相對路徑
-                    if (!data.avatar.startsWith('http') && !data.avatar.startsWith('./')) {
-                        console.log('Trying with ./ prefix:', './' + data.avatar);
-                        SecurityUtils.setSecureAttribute(this, 'src', './' + data.avatar);
-                        retryCount++;
-                    } else if (data.avatar.startsWith('./')) {
-                        // 移除 ./ 前綴重試
-                        console.log('Trying without ./ prefix:', data.avatar.substring(2));
-                        SecurityUtils.setSecureAttribute(this, 'src', data.avatar.substring(2));
-                        retryCount++;
+                    } else if (retryCount === 1) {
+                        // 第二次失敗，嘗試絕對路徑構建
+                        if (!data.avatar.startsWith('http')) {
+                            const baseUrl = window.location.origin + window.location.pathname.replace(/\/[^\/]*$/, '/');
+                            const cleanPath = data.avatar.replace(/^\.\//, '');
+                            const absolutePath = baseUrl + cleanPath;
+                            console.log('Trying with absolute path:', absolutePath);
+                            SecurityUtils.setSecureAttribute(this, 'src', absolutePath);
+                            retryCount++;
+                        } else {
+                            // HTTP 連結失敗，隱藏圖片
+                            console.log('HTTP avatar loading failed, hiding avatar');
+                            this.style.display = 'none';
+                        }
                     } else {
-                        // 隱藏圖片
-                        console.log('Cannot resolve avatar path, hiding avatar');
-                        this.style.display = 'none';
-                        return;
-                    }
-                } else if (retryCount === 1) {
-                    // 第二次失敗，嘗試絕對路徑構建
-                    if (!data.avatar.startsWith('http')) {
-                        const baseUrl = window.location.origin + window.location.pathname.replace(/\/[^\/]*$/, '/');
-                        const cleanPath = data.avatar.replace(/^\.\//, '');
-                        const absolutePath = baseUrl + cleanPath;
-                        console.log('Trying with absolute path:', absolutePath);
-                        SecurityUtils.setSecureAttribute(this, 'src', absolutePath);
-                        retryCount++;
-                    } else {
-                        // HTTP 連結失敗，隱藏圖片
-                        console.log('HTTP avatar loading failed, hiding avatar');
+                        // 所有嘗試都失敗，隱藏圖片
+                        console.log('All avatar loading attempts failed, hiding avatar');
                         this.style.display = 'none';
                     }
-                } else {
-                    // 所有嘗試都失敗，隱藏圖片
-                    console.log('All avatar loading attempts failed, hiding avatar');
-                    this.style.display = 'none';
-                }
-            };
-            
-            // 設定基本屬性
-            avatar.alt = data.name;
-            
-            // 開始載入圖片
-            console.log('Loading avatar:', data.avatar);
-            SecurityUtils.setSecureAttribute(avatar, 'src', data.avatar, [                'https://i.imgur.com',                'https://i.postimg.cc',                 'https://raw.githubusercontent.com',                'https://drive.google.com'            ]);
+                };
+                
+                // 設定基本屬性
+                avatar.alt = data.name;
+                
+                // 開始載入圖片
+                console.log('Loading avatar:', data.avatar);
+                SecurityUtils.setSecureAttribute(avatar, 'src', data.avatar, [                'https://i.imgur.com',                'https://i.postimg.cc',                 'https://raw.githubusercontent.com',                'https://drive.google.com'            ]);
+            } else {
+                // 沒有頭像資料，隱藏頭像區域
+                console.log('No avatar data provided, hiding avatar');
+                avatar.style.display = 'none';
+            }
             
             // 聯絡資訊
             const emailLink = document.getElementById('user-email');
