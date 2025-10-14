@@ -1,20 +1,23 @@
 ## 當前狀態
 ✅ **專案**: NFC 數位名片系統 v2.1.3
-✅ **最新完成**: Avatar 驗證安全修復與生產日誌洩漏防護
-✅ **歸檔**: context/archive/avatar-security-fixes-2025-10-14/
+✅ **最新完成**: QR 碼容量修復與 Avatar 空值處理
+✅ **歸檔**: context/archive/qr-avatar-fixes-2025-10-14/
 
-## 已完成任務 - Avatar 安全驗證修復 (2025-10-14)
-✅ **SEC-FIX-1**: setSecureAttribute 空值處理 → removeAttribute()
-✅ **SEC-FIX-2**: createSafeURL 工具函數 → null-safe 驗證  
-✅ **SEC-FIX-3**: updateAvatar 統一處理 → 來源白名單驗證
-✅ **Codex 強化**: localhost-only 除錯日誌，防止生產環境資訊洩漏
-✅ **架構改善**: 集中化 Avatar 處理邏輯，優雅降級機制
+## 已完成任務 - QR 碼與 Avatar 修復 (2025-10-14)
+✅ **QR 容量修復**: 錯誤修正等級 H→L，解決 1692>1056 溢出問題
+✅ **Avatar 空值處理**: 單語版本添加空值檢查，正確隱藏空 avatar
+✅ **回退遠端版本**: 移除複雜優化，採用簡單有效的修復方案
+✅ **用戶體驗優先**: 保持完整功能，僅調整技術參數
 
-## 修復的安全問題
-- 🔒 **生產日誌洩漏**: validateURL 除錯資訊僅限本地環境
-- 🛡️ **DOM 注入防護**: Avatar URL 強制通過來源白名單驗證
-- 🎯 **屬性操作風險**: 移除直接 setAttribute，統一安全處理
-- 📱 **優雅降級**: 無效 URL 自動隱藏，不影響整體功能
+## 解決的問題
+- 🎯 **QR 碼生成失敗**: 容量溢出 → 調整錯誤修正等級解決
+- 🖼️ **Avatar 顯示異常**: 空值時仍顯示 → 添加空值檢查隱藏
+- 📱 **用戶體驗**: 避免複雜優化影響，採用最小化修復
+- 🔧 **技術債務**: 清理不必要的複雜邏輯
+
+## 提交記錄
+- `43e9934`: QR 錯誤修正等級 H→L 解決容量溢出
+- `7ff4be3`: Avatar 空值檢查修復，正確隱藏空值情況
 
 ---
-**歷史任務已歸檔至**: `context/archive/personal-layout-fixes-2025-10-07/progress-snapshot.md`
+**歷史任務已歸檔至**: `context/archive/avatar-security-fixes-2025-10-14/progress-snapshot.md`

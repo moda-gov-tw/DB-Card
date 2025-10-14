@@ -1,15 +1,22 @@
 {
-  "bundle_id": "avatar-security-fixes-2025-10-14",
+  "bundle_id": "qr-avatar-fixes-2025-10-14",
   "files": [
-    "assets/security-utils.js",
-    "assets/bilingual-common.js",
+    "index.html",
+    "index1.html", 
+    "index-en.html",
+    "index1-en.html",
+    "index-bilingual.html",
+    "index-bilingual-personal.html",
+    "index1-bilingual.html",
+    "nfc-generator.html",
+    "nfc-generator-bilingual.html",
     "progress.md",
     "context/DECISIONS.md"
   ],
-  "tags": ["security", "avatar-validation", "production-logging", "origin-whitelist", "dom-injection-prevention"],
-  "updated_at": "2025-10-14T09:47:00Z",
-  "summary": "Fix avatar validation security issues and production logging exposure",
+  "tags": ["bugfix", "qr-capacity", "avatar-validation", "error-correction", "empty-value-handling"],
+  "updated_at": "2025-10-14T10:24:00Z",
+  "summary": "QR capacity overflow fix and avatar empty value handling",
   "status": "CLOSED",
-  "last_bundle_id": "personal-layout-fixes-2025-10-07",
-  "files_digest": "security-utils.js:localhost-debug-logging+bilingual-common.js:updateAvatar-helper"
+  "last_bundle_id": "avatar-security-fixes-2025-10-14",
+  "files_digest": "html:qr-error-correction-H-to-L+avatar-empty-value-check"
 }

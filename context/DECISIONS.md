@@ -90,3 +90,10 @@
 - Context: Empty avatar URLs causing security-utils validation failures, production debug logs exposing URLs/whitelists, direct avatar src setting bypassing origin validation
 - Decision: Implement localhost-only debug logging, centralized updateAvatar helper with ALLOWED_AVATAR_ORIGINS whitelist, route all avatar updates through SecurityUtils validation
 - Consequences: Eliminates production information disclosure, prevents DOM injection via unsafe avatar URLs, consolidates avatar handling logic with graceful error handling
+
+## Decision: Fix QR capacity overflow and avatar empty value handling
+- Date: 2025-10-14
+- Status: CLOSED
+- Context: QR code generation failing with capacity overflow (1692>1056), avatar elements showing when no data provided, user experience regression from complex optimizations
+- Decision: Simple technical fixes - change QR error correction level H→L for 2-3x capacity increase, add empty value checks for avatar display in single language versions
+- Consequences: Resolves QR generation failures with minimal code changes, properly hides empty avatars, maintains full functionality while prioritizing user experience over complex optimizations
