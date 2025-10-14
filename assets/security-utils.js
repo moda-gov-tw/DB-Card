@@ -251,6 +251,28 @@
         },
 
         /**
+         * 創建安全的URL（帶有空值處理）
+         * @param {string} url - 待處理的URL
+         * @param {Array} allowedOrigins - 允許的來源列表
+         * @returns {string|null} 安全的URL或null（如果無效）
+         */
+        createSafeURL: function(url, allowedOrigins = []) {
+            // Handle empty/null/undefined values
+            if (!url || typeof url !== 'string' || !url.trim()) {
+                this.logSecurityEvent('createSafeURL', 'Empty URL provided', { url: typeof url });
+                return null;
+            }
+
+            // Validate URL
+            if (this.validateURL(url, allowedOrigins)) {
+                return url;
+            } else {
+                this.logSecurityEvent('createSafeURL', 'Invalid URL rejected', { url });
+                return null;
+            }
+        },
+
+        /**
          * 安全的屬性設置
          * @param {HTMLElement} element - 目標元素
          * @param {string} attribute - 屬性名稱
@@ -258,8 +280,17 @@
          * @param {Array} allowedOrigins - 允許的來源列表（可選）
          */
         setSecureAttribute: function(element, attribute, value, allowedOrigins = []) {
-            if (!element || typeof attribute !== 'string' || typeof value !== 'string') return;
-            
+            if (!element || typeof attribute !== 'string') return;
+
+            // Handle empty/null values - remove attribute instead
+            if (!value || typeof value !== 'string' || !value.trim()) {
+                element.removeAttribute(attribute);
+                if (attribute.toLowerCase() === 'href') {
+                    element.setAttribute('aria-disabled', 'true');
+                }
+                return;
+            }
+
             // 對 href, src 等 URL 屬性進行特殊處理
             if (attribute.toLowerCase() === 'href' || attribute.toLowerCase() === 'src') {
                 // 1. 直接驗證原始值（不先編碼）

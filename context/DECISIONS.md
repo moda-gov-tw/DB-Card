@@ -83,3 +83,10 @@
 - Context: Personal layout pages incorrectly displayed institutional information - page title showed "Ministry of Digital Affairs" and organization info was updated with institutional defaults
 - Decision: Modify updatePageTitle() to show personal name for personal layouts and skip updateOrganizationInfo() in renderBilingualCard() when data.organization exists
 - Consequences: Personal layouts now display personalized titles and skip institutional organization updates, maintaining clear separation between personal and institutional card types
+
+## Decision: Fix avatar validation and production logging security issues
+- Date: 2025-10-14
+- Status: CLOSED
+- Context: Empty avatar URLs causing security-utils validation failures, production debug logs exposing URLs/whitelists, direct avatar src setting bypassing origin validation
+- Decision: Implement localhost-only debug logging, centralized updateAvatar helper with ALLOWED_AVATAR_ORIGINS whitelist, route all avatar updates through SecurityUtils validation
+- Consequences: Eliminates production information disclosure, prevents DOM injection via unsafe avatar URLs, consolidates avatar handling logic with graceful error handling

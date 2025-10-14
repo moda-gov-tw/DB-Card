@@ -1,14 +1,15 @@
 {
-  "bundle_id": "personal-layout-fixes-2025-10-07",
+  "bundle_id": "avatar-security-fixes-2025-10-14",
   "files": [
+    "assets/security-utils.js",
     "assets/bilingual-common.js",
     "progress.md",
     "context/DECISIONS.md"
   ],
-  "tags": ["bugfix", "personal-layout", "page-title", "organization-info", "consistency"],
-  "updated_at": "2025-10-07T15:54:00Z",
-  "summary": "Fix personal layout page title and organization display consistency",
+  "tags": ["security", "avatar-validation", "production-logging", "origin-whitelist", "dom-injection-prevention"],
+  "updated_at": "2025-10-14T09:47:00Z",
+  "summary": "Fix avatar validation security issues and production logging exposure",
   "status": "CLOSED",
-  "last_bundle_id": "vcard-address-consistency-fix-2025-10-07",
-  "files_digest": "bilingual-common.js:personal-layout-detection-logic"
+  "last_bundle_id": "personal-layout-fixes-2025-10-07",
+  "files_digest": "security-utils.js:localhost-debug-logging+bilingual-common.js:updateAvatar-helper"
 }
