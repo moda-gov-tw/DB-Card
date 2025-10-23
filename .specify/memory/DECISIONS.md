@@ -1,5 +1,18 @@
 # DECISIONS Log
 
+## 2025-10-23 單語個人版欄位重新設計 [CLOSED]
+**決策**: 統一所有個人版本的欄位排序為 Name → Title → Organization → Department
+**狀態**: CLOSED
+**影響檔案**: index-personal.html, index-personal-en.html
+**關鍵變更**:
+- 欄位順序調整: Department → Name → Title → Organization 改為 Name → Title → Organization → Department
+- 設計一致性: 與雙語版保持完全一致的欄位順序
+- 視覺層次統一: 所有個人版本視覺層次統一
+- HTML 結構優化: DOM 元素順序調整
+
+**驗收標準**: ✅ 欄位順序統一、✅ 設計邏輯一致、✅ 視覺層次統一
+**回滾方案**: git checkout HEAD 還原兩個 HTML 檔案
+
 ## 2025-10-23 個人版雙語欄位重新設計 [CLOSED]
 **決策**: 重新設計個人版雙語版組織名稱與部門欄位的排序排版
 **狀態**: CLOSED

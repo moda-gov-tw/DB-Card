@@ -1,5 +1,26 @@
 # CHECKPOINTS Manifest
 
+## personal-field-unification-2025-10-23
+**時間**: 2025-10-23T19:36:45+08:00
+**版本**: v2.2.0
+**類型**: 單語個人版欄位統一設計
+**狀態**: COMPLETED
+
+### 變更摘要
+- 統一所有個人版本的欄位排序為 Name → Title → Organization → Department
+- 單語中文版和英文版欄位順序調整
+- 與雙語版保持完全一致的設計邏輯
+- 基於 DDD 資訊架構原則的視覺層次
+
+### 檔案清單
+- index-personal.html (單語中文版欄位順序調整)
+- index-personal-en.html (單語英文版欄位順序調整)
+- progress.md (狀態更新)
+
+### DocOps Hash
+- STM: progress.md#personal-field-unification-complete
+- LTM: .specify/memory/DECISIONS.md#2025-10-23-personal-unification-closed
+
 ## bilingual-field-redesign-2025-10-23
 **時間**: 2025-10-23T19:28:25+08:00
 **版本**: v2.2.0

@@ -1,9 +1,41 @@
 ## 當前狀態
 ✅ **專案**: NFC 數位名片系統 v2.2.0
-✅ **最新完成**: 個人版雙語欄位排序重新設計優化
-✅ **歸檔**: context/archive/bilingual-field-redesign-2025-10-23/
+✅ **最新完成**: 單語個人版欄位排序重新設計（統一所有個人版本）
+✅ **歸檔**: context/archive/personal-field-unification-2025-10-23/
 
-## 已完成任務 - README.md 版本歷程補充 (2025-10-23)
+## 已完成任務 - 單語個人版欄位排序重新設計 (2025-10-23)
+✅ **欄位順序調整**: 將單語個人版欄位順序改為 Name → Title → Organization → Department
+✅ **雙版本同步**: 中文版 (index-personal.html) 與英文版 (index-personal-en.html) 同步調整
+✅ **視覺層次一致**: 確保與雙語版設計邏輯一致，維持統一視覺層次
+✅ **HTML 結構優化**: 調整 DOM 元素順序，從原本 Department → Name → Title → Organization 改為 Name → Title → Organization → Department
+
+## 解決的問題
+- 📋 **設計一致性**: 單語版與雙語版欄位順序統一，提升產品一致性
+- 🎯 **資訊層次**: 姓名優先顯示符合使用者認知習慣
+- 👁️ **視覺引導**: 職稱 → 組織 → 部門的層次結構更清晰
+- 📱 **使用者體驗**: 更直覺的資訊排列順序
+
+## 技術調整
+### HTML 結構
+- 調整元素順序 (lines 489-492):
+  - **原順序**: Department → Name → Title → Organization
+  - **新順序**: Name → Title → Organization → Department
+- 同步調整兩個版本檔案:
+  - `index-personal.html` (中文版)
+  - `index-personal-en.html` (英文版)
+
+### 測試建議
+- ✅ **視覺驗證**: 確認單語版欄位顯示順序正確
+- ✅ **響應式測試**: 驗證行動裝置版面正常
+- ✅ **一致性檢查**: 對比雙語版確認視覺層次統一
+
+## 變更檔案清單
+- ✅ `index-personal.html` (lines 489-492) - HTML 結構調整
+- ✅ `index-personal-en.html` (lines 489-492) - HTML 結構調整
+- ✅ `progress.md` - 更新 STM 記錄本次任務
+
+---
+## 歷史任務 - README.md 版本歷程補充 (2025-10-23)
 ✅ **版本歷程完整性**: 補充 v2.1.4 至 v2.1.9 版本更新說明
 ✅ **Git 歷史分析**: 基於 commit history 整理功能演進
 ✅ **版本分類**: 按功能主題分類（安全升級、授權、資料遷移、優化、位置功能）

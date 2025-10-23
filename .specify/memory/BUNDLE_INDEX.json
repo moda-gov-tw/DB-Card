@@ -1,17 +1,17 @@
 {
-  "last_checkpoint_id": "bilingual-field-redesign-2025-10-23",
-  "last_lifecycle_epoch": "2025-10-23T19:28:25+08:00",
-  "last_design_id": "personal-bilingual-field-hierarchy@v2.2.0",
-  "last_user_hash": "bilingual-field-redesign-request",
+  "last_checkpoint_id": "personal-field-unification-2025-10-23",
+  "last_lifecycle_epoch": "2025-10-23T19:36:45+08:00",
+  "last_design_id": "personal-field-hierarchy-unification@v2.2.0",
+  "last_user_hash": "personal-field-unification-request",
   "files_digest": {
-    "index-bilingual-personal.html": "個人版雙語欄位順序重新設計(Name→Title→Organization→Department)",
-    "assets/high-accessibility.css": "雙語版視覺層次優化,統一中英文樣式,調整間距字重",
-    "progress.md": "任務狀態更新為個人版雙語欄位重新設計完成"
+    "index-personal.html": "單語中文版欄位順序統一(Name→Title→Organization→Department)",
+    "index-personal-en.html": "單語英文版欄位順序統一(Name→Title→Organization→Department)",
+    "progress.md": "任務狀態更新為單語個人版欄位重新設計完成"
   },
   "promoted_facts": [
-    "個人版雙語欄位排序重新設計完成",
-    "視覺層次邏輯清晰分明",
-    "雙語版本樣式完全統一",
-    "欄位順序符合資訊架構邏輯"
+    "所有個人版本欄位順序統一完成",
+    "設計邏輯基於DDD資訊架構原則",
+    "視覺層次在所有版本保持一致",
+    "個人版本間完全統一的使用者體驗"
   ]
 }
