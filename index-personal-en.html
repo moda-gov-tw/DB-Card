@@ -201,6 +201,18 @@
             letter-spacing: 0.01em;
         }
 
+        .organization a {
+            color: #4e4e81;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .organization a:hover {
+            color: #6868ac;
+            text-decoration: none;
+            transform: translateY(-1px);
+        }
+
         .greeting {
             font-size: 1.35em;
             color: #495057;
@@ -814,11 +826,71 @@
             document.getElementById('user-title').textContent = data.title;
             document.getElementById('user-department').textContent = data.department;
             
-            // Organization (optional for personal version)
+            // Organization (optional for personal version) - with map linking and smart deduplication
             const orgElement = document.getElementById('user-organization');
             if (data.organization && data.organization.trim() !== '') {
-                orgElement.textContent = data.organization;
-                orgElement.style.display = 'inline-block';
+                // Smart deduplication: Check if organization name matches location label
+                let showOrgElement = true;
+                if (data.location && data.location.label && data.location.label.trim()) {
+                    if (data.organization.trim() === data.location.label.trim()) {
+                        showOrgElement = false;
+                    }
+                }
+
+                if (showOrgElement) {
+                    // Check if there's a corresponding map link
+                    if (data.location && (data.location.mapId || (data.location.lat && data.location.lng))) {
+                        let mapUrl = '';
+                        if (data.location.mapId) {
+                            const normalizedMapId = normalizeMapId(data.location.mapId);
+                            if (normalizedMapId) {
+                                mapUrl = buildMapShareUrl(normalizedMapId);
+                            }
+                        } else if (data.location.lat && data.location.lng) {
+                            const latText = formatCoordinate(data.location.lat, 'lat');
+                            const lngText = formatCoordinate(data.location.lng, 'lng');
+                            if (latText && lngText) {
+                                mapUrl = buildMapUrlFromCoords(latText, lngText);
+                            }
+                        }
+
+                        if (mapUrl) {
+                            // Create clickable link
+                            const mapLink = createMapLinkElement(mapUrl, data.organization);
+                            if (mapLink) {
+                                // Clear and set link
+                                while (orgElement.firstChild) {
+                                    orgElement.removeChild(orgElement.firstChild);
+                                }
+                                // Remove inline-block style to allow link to display properly
+                                orgElement.style.display = 'block';
+                                orgElement.style.marginBottom = '20px';
+                                mapLink.style.display = 'inline-block';
+                                mapLink.style.background = 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)';
+                                mapLink.style.color = '#4e4e81';
+                                mapLink.style.padding = '8px 16px';
+                                mapLink.style.borderRadius = '15px';
+                                mapLink.style.fontSize = '0.9em';
+                                mapLink.style.fontWeight = '400';
+                                mapLink.style.border = '1px solid #d1d5db';
+                                mapLink.style.letterSpacing = '0.01em';
+                                mapLink.style.textDecoration = 'none';
+                                orgElement.appendChild(mapLink);
+                            } else {
+                                orgElement.textContent = data.organization;
+                                orgElement.style.display = 'inline-block';
+                            }
+                        } else {
+                            orgElement.textContent = data.organization;
+                            orgElement.style.display = 'inline-block';
+                        }
+                    } else {
+                        orgElement.textContent = data.organization;
+                        orgElement.style.display = 'inline-block';
+                    }
+                } else {
+                    orgElement.style.display = 'none';
+                }
             } else {
                 orgElement.style.display = 'none';
             }
@@ -1115,6 +1187,11 @@
                 result.data.location = {
                     mapId: compactData.lm.trim()
                 };
+                
+                // Add custom label support
+                if (compactData.ll && typeof compactData.ll === 'string' && compactData.ll.trim()) {
+                    result.data.location.label = compactData.ll.trim();
+                }
             } else if (compactData.lc && typeof compactData.lc === 'string' && compactData.lc.trim()) {
                 // GPS coordinates string mode "lat,lng"
                 const coords = compactData.lc.split(',');

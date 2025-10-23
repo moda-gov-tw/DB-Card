@@ -201,6 +201,18 @@
             letter-spacing: 0.01em;
         }
 
+        .organization a {
+            color: #4e4e81;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .organization a:hover {
+            color: #6868ac;
+            text-decoration: none;
+            transform: translateY(-1px);
+        }
+
         .greeting {
             font-size: 1.35em;
             color: #495057;
@@ -814,11 +826,71 @@
             document.getElementById('user-title').textContent = data.title;
             document.getElementById('user-department').textContent = data.department;
             
-            // 組織名稱（個人版可選）
+            // 組織名稱（個人版可選）- 支援地圖連結與智慧去重
             const orgElement = document.getElementById('user-organization');
             if (data.organization && data.organization.trim() !== '') {
-                orgElement.textContent = data.organization;
-                orgElement.style.display = 'inline-block';
+                // 智慧去重：檢查組織名稱與地址標籤是否相同
+                let showOrgElement = true;
+                if (data.location && data.location.label && data.location.label.trim()) {
+                    if (data.organization.trim() === data.location.label.trim()) {
+                        showOrgElement = false;
+                    }
+                }
+
+                if (showOrgElement) {
+                    // 檢查是否有對應的地圖連結
+                    if (data.location && (data.location.mapId || (data.location.lat && data.location.lng))) {
+                        let mapUrl = '';
+                        if (data.location.mapId) {
+                            const normalizedMapId = normalizeMapId(data.location.mapId);
+                            if (normalizedMapId) {
+                                mapUrl = buildMapShareUrl(normalizedMapId);
+                            }
+                        } else if (data.location.lat && data.location.lng) {
+                            const latText = formatCoordinate(data.location.lat, 'lat');
+                            const lngText = formatCoordinate(data.location.lng, 'lng');
+                            if (latText && lngText) {
+                                mapUrl = buildMapUrlFromCoords(latText, lngText);
+                            }
+                        }
+
+                        if (mapUrl) {
+                            // 建立可點擊的連結
+                            const mapLink = createMapLinkElement(mapUrl, data.organization);
+                            if (mapLink) {
+                                // 清空並設置連結
+                                while (orgElement.firstChild) {
+                                    orgElement.removeChild(orgElement.firstChild);
+                                }
+                                // 移除 inline-block 樣式，讓連結能正常顯示
+                                orgElement.style.display = 'block';
+                                orgElement.style.marginBottom = '20px';
+                                mapLink.style.display = 'inline-block';
+                                mapLink.style.background = 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)';
+                                mapLink.style.color = '#4e4e81';
+                                mapLink.style.padding = '8px 16px';
+                                mapLink.style.borderRadius = '15px';
+                                mapLink.style.fontSize = '0.9em';
+                                mapLink.style.fontWeight = '400';
+                                mapLink.style.border = '1px solid #d1d5db';
+                                mapLink.style.letterSpacing = '0.01em';
+                                mapLink.style.textDecoration = 'none';
+                                orgElement.appendChild(mapLink);
+                            } else {
+                                orgElement.textContent = data.organization;
+                                orgElement.style.display = 'inline-block';
+                            }
+                        } else {
+                            orgElement.textContent = data.organization;
+                            orgElement.style.display = 'inline-block';
+                        }
+                    } else {
+                        orgElement.textContent = data.organization;
+                        orgElement.style.display = 'inline-block';
+                    }
+                } else {
+                    orgElement.style.display = 'none';
+                }
             } else {
                 orgElement.style.display = 'none';
             }
@@ -1115,6 +1187,11 @@
                 result.data.location = {
                     mapId: compactData.lm.trim()
                 };
+                
+                // 添加自訂標籤支援
+                if (compactData.ll && typeof compactData.ll === 'string' && compactData.ll.trim()) {
+                    result.data.location.label = compactData.ll.trim();
+                }
             } else if (compactData.lc && typeof compactData.lc === 'string' && compactData.lc.trim()) {
                 // GPS 座標字串模式 "lat,lng"
                 const coords = compactData.lc.split(',');

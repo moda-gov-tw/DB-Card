@@ -308,8 +308,12 @@ function encodeCompact(data) {
 
         const parts = [];
 
+        // 處理 Google Maps ID（優先）
+        if (location.mapId && typeof location.mapId === 'string' && location.mapId.trim()) {
+            parts.push(`mapId:${location.mapId.trim()}`);
+        }
         // 處理座標
-        if (location.coords) {
+        else if (location.coords) {
             const lat = sanitizeCoordinateValue(location.coords.lat, 'lat');
             const lng = sanitizeCoordinateValue(location.coords.lng, 'lng');
             if (lat !== null && lng !== null) {
@@ -410,17 +414,31 @@ function decodeCompact(encoded) {
             };
         }
 
-        // 解析 location 欄位（支援 coords 和 label）
+        // 解析 location 欄位（支援 mapId, coords 和 label）
         const parseLocation = (locationStr) => {
             if (!locationStr || !locationStr.trim()) return null;
 
             try {
-                // 格式: "lat,lng;label" 或 "lat,lng" 或 "label"
+                // 格式: "mapId:ID;label" 或 "lat,lng;label" 或 "lat,lng" 或 "label"
                 const parts = locationStr.split(';');
                 const location = {};
 
+                // 檢查第一部分是否為 Google Maps ID
+                if (parts[0] && parts[0].startsWith('mapId:')) {
+                    const mapId = parts[0].substring(6).trim(); // 移除 "mapId:" 前綴
+                    if (mapId && /^[a-zA-Z0-9]{10,25}$/.test(mapId)) {
+                        location.mapId = mapId;
+                    }
+                    // 如果有第二部分，則為 label
+                    if (parts[1]) {
+                        const cleanedLabel = sanitizeLocationLabel(parts[1]);
+                        if (cleanedLabel) {
+                            location.label = cleanedLabel;
+                        }
+                    }
+                }
                 // 檢查第一部分是否為座標
-                if (parts[0] && parts[0].includes(',')) {
+                else if (parts[0] && parts[0].includes(',')) {
                     const [rawLat, rawLng] = parts[0].split(',');
                     const lat = sanitizeCoordinateValue(rawLat, 'lat');
                     const lng = sanitizeCoordinateValue(rawLng, 'lng');

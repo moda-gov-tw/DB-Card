@@ -1,39 +1,34 @@
 {
-  "last_checkpoint_id": "custom-label-2025-10-23",
-  "last_lifecycle_epoch": "2025-10-23T14:57:21.667+08:00",
-  "last_design_id": "personal-card-location-refactor@v2.1.8",
-  "last_user_hash": "google-maps-custom-label",
+  "last_checkpoint_id": "org-map-link-2025-10-23",
+  "last_lifecycle_epoch": "2025-10-23T15:41:07.963+08:00",
+  "last_design_id": "personal-card-location-refactor@v2.1.9",
+  "last_user_hash": "organization-map-link-integration",
   "files_digest": {
-    "nfc-generator.html": {
+    "index-bilingual-personal.html": {
       "last_modified": "2025-10-23",
-      "key_features": ["自訂標籤輸入", "即時字數統計", "容量計算整合"],
-      "purpose": "單語版生成器自訂標籤支援"
-    },
-    "nfc-generator-bilingual.html": {
-      "last_modified": "2025-10-23",
-      "key_features": ["雙語標籤輸入", "獨立字數統計", "容量監控"],
-      "purpose": "雙語版生成器自訂標籤支援"
+      "key_features": ["組織地圖連結", "智慧去重邏輯", "雙語支援"],
+      "purpose": "雙語版組織名稱地圖連結與去重顯示"
     },
     "index-personal.html": {
       "last_modified": "2025-10-23",
-      "key_features": ["標籤優先顯示", "預設回退邏輯"],
-      "purpose": "單語展示頁自訂標籤顯示"
+      "key_features": ["組織地圖連結", "漸層背景設計", "hover 效果"],
+      "purpose": "單語中文版組織名稱地圖連結"
     },
     "index-personal-en.html": {
       "last_modified": "2025-10-23",
-      "key_features": ["標籤優先顯示", "預設回退邏輯"],
-      "purpose": "英文展示頁自訂標籤顯示"
+      "key_features": ["組織地圖連結", "漸層背景設計", "hover 效果"],
+      "purpose": "單語英文版組織名稱地圖連結"
     },
-    "index-bilingual-personal.html": {
+    "doc/personal-card-location-refactor.md": {
       "last_modified": "2025-10-23",
-      "key_features": ["雙語標籤切換", "地圖連結重構", "語言切換顯示"],
-      "purpose": "雙語展示頁自訂標籤與地圖連結"
+      "key_features": ["v2.1.9 功能文檔", "組織地圖連結整合設計"],
+      "purpose": "組織地圖連結功能設計文檔"
     }
   },
-  "custom_label_features": {
-    "character_limit": "20 字元",
-    "bilingual_format": "zh~en",
-    "color_coding": "0-10 綠色、10-20 黃色、>20 紅色",
-    "fallback": "預設 Google Maps"
+  "organization_map_features": {
+    "dual_functionality": "身份識別 + 地圖導航",
+    "smart_deduplication": "避免重複資訊顯示",
+    "visual_consistency": "hover 效果與設計統一",
+    "security": "使用 createMapLinkElement 安全驗證"
   }
 }

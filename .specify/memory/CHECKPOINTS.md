@@ -1,6 +1,17 @@
 # 專案檢查點清單
 
-## custom-label-2025-10-23
+## org-map-link-2025-10-23
+- **時間**: 2025-10-23T15:41:07.963+08:00
+- **設計**: personal-card-location-refactor@v2.1.9
+- **狀態**: ✅ 完成
+- **摘要**: 組織名稱地圖連結整合 - 智慧去重與雙重功能
+- **檔案**: 4 個檔案變更 (index-bilingual-personal.html, index-personal.html, index-personal-en.html, doc/personal-card-location-refactor.md)
+- **功能特色**: 雙重功能整合、智慧去重邏輯、視覺一致性、安全連結生成
+- **使用者體驗**: 組織名稱 = 身份識別 + 地圖導航，避免重複資訊顯示
+- **DocOps**: progress.md 更新、DECISIONS.md 新增、BUNDLE_INDEX.json 更新
+- **STM 雜湊**: organization-map-link-integration
+
+## custom-label-2025-10-23 (已歸檔)
 - **時間**: 2025-10-23T14:57:21.667+08:00
 - **設計**: personal-card-location-refactor@v2.1.8
 - **狀態**: ✅ 完成

@@ -586,10 +586,65 @@
             const orgItem = document.getElementById('orgItem');
             const addressItem = document.getElementById('addressItem');
 
-            if (data.organization && data.organization.trim()) {
-                const orgText = getLocalizedText(data.organization, lang);
-                updateElement('orgName', orgText);
-                orgItem.style.display = 'flex';
+            // 處理組織名稱與地圖連結
+            const orgNameElement = document.getElementById('orgName');
+            if (orgNameElement) {
+                // 清空現有內容
+                while (orgNameElement.firstChild) {
+                    orgNameElement.removeChild(orgNameElement.firstChild);
+                }
+
+                if (data.organization && data.organization.trim()) {
+                    const orgText = getLocalizedText(data.organization, lang);
+
+                    // 智慧去重：檢查組織名稱與地址是否相同
+                    let showOrgRow = true;
+                    if (data.location && data.location.label) {
+                        const locationLabel = getLocalizedText(data.location.label, lang);
+                        // 如果組織名稱與位置標籤相同，則不顯示組織行
+                        if (orgText.trim() === locationLabel.trim()) {
+                            showOrgRow = false;
+                        }
+                    }
+
+                    if (showOrgRow) {
+                        // 檢查是否有對應的地圖連結
+                        if (data.location && (data.location.mapId || data.location.coords)) {
+                            // 建立地圖連結
+                            let mapUrl = '';
+                            if (data.location.mapId) {
+                                const mapId = data.location.mapId.trim();
+                                if (mapId && /^[a-zA-Z0-9]{10,25}$/.test(mapId)) {
+                                    mapUrl = `https://maps.app.goo.gl/${mapId}`;
+                                }
+                            } else if (data.location.coords) {
+                                const coords = data.location.coords;
+                                if (coords.lat && coords.lng) {
+                                    mapUrl = `https://maps.google.com/?q=${coords.lat},${coords.lng}`;
+                                }
+                            }
+
+                            if (mapUrl) {
+                                const orgLink = document.createElement('a');
+                                orgLink.href = mapUrl;
+                                orgLink.target = '_blank';
+                                orgLink.rel = 'noopener noreferrer';
+                                orgLink.textContent = orgText;
+                                orgLink.className = 'contact-link';
+                                orgNameElement.appendChild(orgLink);
+                            } else {
+                                orgNameElement.textContent = orgText;
+                            }
+                        } else {
+                            orgNameElement.textContent = orgText;
+                        }
+                        orgItem.style.display = 'flex';
+                    } else {
+                        orgItem.style.display = 'none';
+                    }
+                } else {
+                    orgItem.style.display = 'none';
+                }
             } else {
                 orgItem.style.display = 'none';
             }
@@ -609,9 +664,15 @@
                     const mapId = data.location.mapId.trim();
                     if (mapId && /^[a-zA-Z0-9]{10,25}$/.test(mapId)) {
                         const shareUrl = `https://maps.app.goo.gl/${mapId}`;
-                        const displayLabel = (data.location.label && data.location.label.trim())
-                            ? getLocalizedText(data.location.label, lang)
-                            : (lang === 'en' ? 'Google Maps' : 'Google Maps');
+                        
+                        // 處理自訂標籤
+                        let displayLabel = 'Google Maps';
+                        if (data.location.label && data.location.label.trim()) {
+                            const labelText = getLocalizedText(data.location.label, lang);
+                            if (labelText && labelText.trim()) {
+                                displayLabel = labelText.trim();
+                            }
+                        }
 
                         const mapLink = document.createElement('a');
                         mapLink.href = shareUrl;
@@ -629,9 +690,15 @@
                     const coords = data.location.coords;
                     if (coords.lat && coords.lng) {
                         const mapUrl = `https://maps.google.com/?q=${coords.lat},${coords.lng}`;
-                        const displayLabel = (data.location.label && data.location.label.trim())
-                            ? getLocalizedText(data.location.label, lang)
-                            : `${coords.lat}, ${coords.lng}`;
+                        
+                        // 處理自訂標籤
+                        let displayLabel = `${coords.lat}, ${coords.lng}`;
+                        if (data.location.label && data.location.label.trim()) {
+                            const labelText = getLocalizedText(data.location.label, lang);
+                            if (labelText && labelText.trim()) {
+                                displayLabel = labelText.trim();
+                            }
+                        }
 
                         const mapLink = document.createElement('a');
                         mapLink.href = mapUrl;
@@ -861,13 +928,15 @@
         }
 
         // 頁面初始化由 bilingual-common.js 統一處理
-
+        // 額外的事件監聽器設定
         document.addEventListener('DOMContentLoaded', () => {
+            // 語言切換按鈕
             const langSwitchButton = document.getElementById('langSwitch');
             if (langSwitchButton) {
                 langSwitchButton.addEventListener('click', () => toggleLanguage());
             }
 
+            // 下載按鈕
             const downloadButton = document.getElementById('downloadBtn');
             if (downloadButton) {
                 downloadButton.addEventListener('click', () => {
