@@ -1,43 +1,39 @@
 {
-  "last_checkpoint_id": "google-maps-id-2025-10-23",
-  "last_lifecycle_epoch": "2025-10-23T14:23:13.553+08:00",
-  "last_design_id": "personal-card-location-refactor@v2.1.7",
-  "last_user_hash": "google-maps-id-support",
+  "last_checkpoint_id": "custom-label-2025-10-23",
+  "last_lifecycle_epoch": "2025-10-23T14:57:21.667+08:00",
+  "last_design_id": "personal-card-location-refactor@v2.1.8",
+  "last_user_hash": "google-maps-custom-label",
   "files_digest": {
-    "assets/bilingual-common.js": {
-      "last_modified": "2025-10-23",
-      "key_functions": ["extractGoogleMapsId", "sanitizeCoordinateValue", "normalizeMapId", "buildShareUrlFromMapId"],
-      "purpose": "Google Maps ID 提取與座標正規化"
-    },
-    "assets/security-utils.js": {
-      "last_modified": "2025-10-23", 
-      "key_functions": ["validateGoogleMapsId", "normalizeCoordinate", "normalizeGoogleMapsId", "createGoogleMapsShareUrl"],
-      "purpose": "安全驗證與地圖 URL 白名單"
-    },
     "nfc-generator.html": {
       "last_modified": "2025-10-23",
-      "key_features": ["三選一地址模式", "Google Maps ID 處理", "座標驗證"],
-      "purpose": "單語版生成器 UI 更新"
+      "key_features": ["自訂標籤輸入", "即時字數統計", "容量計算整合"],
+      "purpose": "單語版生成器自訂標籤支援"
     },
     "nfc-generator-bilingual.html": {
       "last_modified": "2025-10-23",
-      "key_features": ["雙語三選一模式", "Google Maps ID 處理", "座標驗證"],
-      "purpose": "雙語版生成器 UI 更新"
+      "key_features": ["雙語標籤輸入", "獨立字數統計", "容量監控"],
+      "purpose": "雙語版生成器自訂標籤支援"
     },
     "index-personal.html": {
       "last_modified": "2025-10-23",
-      "key_features": ["智慧連結生成", "優先順序處理", "vCard 位置支援"],
-      "purpose": "個人版展示頁智慧連結"
+      "key_features": ["標籤優先顯示", "預設回退邏輯"],
+      "purpose": "單語展示頁自訂標籤顯示"
     },
     "index-personal-en.html": {
       "last_modified": "2025-10-23",
-      "key_features": ["智慧連結生成", "優先順序處理", "vCard 位置支援"],
-      "purpose": "英文版展示頁智慧連結"
+      "key_features": ["標籤優先顯示", "預設回退邏輯"],
+      "purpose": "英文展示頁自訂標籤顯示"
+    },
+    "index-bilingual-personal.html": {
+      "last_modified": "2025-10-23",
+      "key_features": ["雙語標籤切換", "地圖連結重構", "語言切換顯示"],
+      "purpose": "雙語展示頁自訂標籤與地圖連結"
     }
   },
-  "capacity_optimization": {
-    "google_maps_id": "17 字元",
-    "full_url": "42 字元", 
-    "savings": "59%"
+  "custom_label_features": {
+    "character_limit": "20 字元",
+    "bilingual_format": "zh~en",
+    "color_coding": "0-10 綠色、10-20 黃色、>20 紅色",
+    "fallback": "預設 Google Maps"
   }
 }

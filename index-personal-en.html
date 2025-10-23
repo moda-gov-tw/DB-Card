@@ -880,13 +880,18 @@
             if (addressElement && data.location && data.location.mapId) {
                 const normalizedMapId = normalizeMapId(data.location.mapId);
                 const shareUrl = normalizedMapId ? buildMapShareUrl(normalizedMapId) : '';
-                const mapLink = createMapLinkElement(shareUrl, '📍 Google Maps');
+
+                // 優先使用自訂標籤，否則使用預設「Google Maps」
+                const displayLabel = (data.location.label && data.location.label.trim())
+                    ? `📍 ${data.location.label}`
+                    : '📍 Google Maps';
+                const mapLink = createMapLinkElement(shareUrl, displayLabel);
 
                 if (mapLink) {
                     addressElement.appendChild(mapLink);
                     hasLocationContent = true;
                 } else if (normalizedMapId) {
-                    addressElement.appendChild(document.createTextNode('📍 Location'));
+                    addressElement.appendChild(document.createTextNode(displayLabel));
                     hasLocationContent = true;
                 } else if (window.SecurityUtils && typeof SecurityUtils.logSecurityEvent === 'function') {
                     SecurityUtils.logSecurityEvent('renderCard', 'Invalid Google Maps ID detected', { mapId: data.location.mapId });

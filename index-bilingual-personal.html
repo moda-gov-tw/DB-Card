@@ -594,15 +594,64 @@
                 orgItem.style.display = 'none';
             }
 
-            // 優先使用 location.label，無 location 時才使用 address
-            if (data.location && data.location.label && data.location.label.trim()) {
-                const addressText = getLocalizedText(data.location.label, lang);
-                updateElement('orgAddress', addressText);
-                addressItem.style.display = 'flex';
-            } else if (data.address && data.address.trim()) {
-                const addressText = getLocalizedText(data.address, lang);
-                updateElement('orgAddress', addressText);
-                addressItem.style.display = 'flex';
+            // 處理地址與地圖連結
+            const addressElement = document.getElementById('orgAddress');
+            if (addressElement) {
+                // 清空現有內容
+                while (addressElement.firstChild) {
+                    addressElement.removeChild(addressElement.firstChild);
+                }
+
+                let hasLocationContent = false;
+
+                // 優先使用 Google Maps ID
+                if (data.location && data.location.mapId) {
+                    const mapId = data.location.mapId.trim();
+                    if (mapId && /^[a-zA-Z0-9]{10,25}$/.test(mapId)) {
+                        const shareUrl = `https://maps.app.goo.gl/${mapId}`;
+                        const displayLabel = (data.location.label && data.location.label.trim())
+                            ? getLocalizedText(data.location.label, lang)
+                            : (lang === 'en' ? 'Google Maps' : 'Google Maps');
+
+                        const mapLink = document.createElement('a');
+                        mapLink.href = shareUrl;
+                        mapLink.target = '_blank';
+                        mapLink.rel = 'noopener noreferrer';
+                        mapLink.textContent = `📍 ${displayLabel}`;
+                        mapLink.style.color = '#007bff';
+                        mapLink.style.textDecoration = 'none';
+                        addressElement.appendChild(mapLink);
+                        hasLocationContent = true;
+                    }
+                }
+                // 次選使用 GPS 座標
+                else if (data.location && data.location.coords) {
+                    const coords = data.location.coords;
+                    if (coords.lat && coords.lng) {
+                        const mapUrl = `https://maps.google.com/?q=${coords.lat},${coords.lng}`;
+                        const displayLabel = (data.location.label && data.location.label.trim())
+                            ? getLocalizedText(data.location.label, lang)
+                            : `${coords.lat}, ${coords.lng}`;
+
+                        const mapLink = document.createElement('a');
+                        mapLink.href = mapUrl;
+                        mapLink.target = '_blank';
+                        mapLink.rel = 'noopener noreferrer';
+                        mapLink.textContent = `📍 ${displayLabel}`;
+                        mapLink.style.color = '#007bff';
+                        mapLink.style.textDecoration = 'none';
+                        addressElement.appendChild(mapLink);
+                        hasLocationContent = true;
+                    }
+                }
+                // 最後使用文字地址
+                else if (data.address && data.address.trim()) {
+                    const addressText = getLocalizedText(data.address, lang);
+                    addressElement.textContent = addressText;
+                    hasLocationContent = true;
+                }
+
+                addressItem.style.display = hasLocationContent ? 'flex' : 'none';
             } else {
                 addressItem.style.display = 'none';
             }

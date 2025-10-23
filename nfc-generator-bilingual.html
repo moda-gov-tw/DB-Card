@@ -401,6 +401,25 @@
                             • <strong>容量優勢 / Capacity Advantage：</strong>相比 GPS 座標節省 23% 空間 / 23% less space vs GPS coordinates<br>
                             • 留空則不顯示地址資訊 / Leave empty to hide address
                         </div>
+
+                        <div style="margin-top: 15px;">
+                            <label>顯示標籤 / Display Label：</label>
+                            <div class="input-group">
+                                <div class="lang-label">🇹🇼</div>
+                                <input type="text" id="googleMapsLabelZh" placeholder="中文標籤（例如：辦公室、會議地點）" maxlength="20" style="flex: 1;">
+                            </div>
+                            <div class="input-group" style="margin-top: 8px;">
+                                <div class="lang-label">🇺🇸</div>
+                                <input type="text" id="googleMapsLabelEn" placeholder="English Label (e.g.: Office, Meeting Venue)" maxlength="20" style="flex: 1;">
+                            </div>
+                            <div class="help-text">
+                                💡 <strong>自訂標籤說明 / Custom Label Guide：</strong><br>
+                                • 自訂地圖連結的顯示文字 / Customize the display text for map link<br>
+                                • 中文 <span id="labelCharCountZh" style="color: #059669;">0</span>/20 字 | 英文 <span id="labelCharCountEn" style="color: #059669;">0</span>/20 字 / CN <span id="labelCharCountZh2" style="color: #059669;">0</span>/20 | EN <span id="labelCharCountEn2" style="color: #059669;">0</span>/20<br>
+                                • 留空則顯示預設「Google Maps」 / Leave empty to show default "Google Maps"<br>
+                                • <strong>範例 / Examples：</strong>辦公室/Office、會議室A/Meeting Room A、客服中心/Customer Service
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -901,6 +920,13 @@
                         location = {
                             mapId: normalizedId
                         };
+
+                        // 收集雙語自訂標籤
+                        const labelZh = sanitizeInput(document.getElementById('googleMapsLabelZh').value.trim());
+                        const labelEn = sanitizeInput(document.getElementById('googleMapsLabelEn').value.trim());
+                        if (labelZh || labelEn) {
+                            location.label = `${labelZh}~${labelEn}`;
+                        }
                     }
                 } else {
                     // 文字地址模式
@@ -1095,7 +1121,7 @@
 
         // 綁定即時監控事件
         document.addEventListener('DOMContentLoaded', function() {
-            const inputs = ['nameZh', 'nameEn', 'titleZh', 'titleEn', 'department', 'email', 'phone', 'mobile', 'organizationZh', 'organizationEn', 'addressZh', 'addressEn', 'latitude', 'longitude', 'avatar', 'greetingsZh', 'greetingsEn', 'socialNote'];
+            const inputs = ['nameZh', 'nameEn', 'titleZh', 'titleEn', 'department', 'email', 'phone', 'mobile', 'organizationZh', 'organizationEn', 'addressZh', 'addressEn', 'latitude', 'longitude', 'googleMapsUrl', 'googleMapsLabelZh', 'googleMapsLabelEn', 'avatar', 'greetingsZh', 'greetingsEn', 'socialNote'];
             inputs.forEach(id => {
                 const element = document.getElementById(id);
                 if (element) {
@@ -1128,7 +1154,55 @@
                     updateSocialPreview();
                 });
             }
+
+            // 為標籤輸入添加字數統計
+            const labelZhElement = document.getElementById('googleMapsLabelZh');
+            const labelEnElement = document.getElementById('googleMapsLabelEn');
+            if (labelZhElement) {
+                labelZhElement.addEventListener('input', updateLabelCharCount);
+            }
+            if (labelEnElement) {
+                labelEnElement.addEventListener('input', updateLabelCharCount);
+            }
         });
+
+        // 標籤字數統計
+        function updateLabelCharCount() {
+            const labelZh = document.getElementById('googleMapsLabelZh');
+            const labelEn = document.getElementById('googleMapsLabelEn');
+            const charCountZh = document.getElementById('labelCharCountZh');
+            const charCountZh2 = document.getElementById('labelCharCountZh2');
+            const charCountEn = document.getElementById('labelCharCountEn');
+            const charCountEn2 = document.getElementById('labelCharCountEn2');
+
+            if (labelZh && charCountZh && charCountZh2) {
+                const countZh = labelZh.value.length;
+                charCountZh.textContent = countZh;
+                charCountZh2.textContent = countZh;
+
+                if (countZh <= 10) {
+                    charCountZh.style.color = charCountZh2.style.color = '#059669';
+                } else if (countZh <= 20) {
+                    charCountZh.style.color = charCountZh2.style.color = '#d97706';
+                } else {
+                    charCountZh.style.color = charCountZh2.style.color = '#dc2626';
+                }
+            }
+
+            if (labelEn && charCountEn && charCountEn2) {
+                const countEn = labelEn.value.length;
+                charCountEn.textContent = countEn;
+                charCountEn2.textContent = countEn;
+
+                if (countEn <= 10) {
+                    charCountEn.style.color = charCountEn2.style.color = '#059669';
+                } else if (countEn <= 20) {
+                    charCountEn.style.color = charCountEn2.style.color = '#d97706';
+                } else {
+                    charCountEn.style.color = charCountEn2.style.color = '#dc2626';
+                }
+            }
+        }
 
         // 切換個人版專屬欄位
         function togglePersonalFields() {

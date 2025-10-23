@@ -365,6 +365,16 @@
                             • <strong>容量優勢：</strong>相比 GPS 座標節省 23% 空間<br>
                             • 留空則不顯示地址資訊
                         </div>
+
+                        <label for="googleMapsLabel" style="margin-top: 15px;">顯示標籤（選填）</label>
+                        <input type="text" id="googleMapsLabel" placeholder="例如: 辦公室、會議地點" maxlength="20">
+                        <div style="font-size: 0.8em; color: #6b7280; margin-top: 8px; line-height: 1.4;">
+                            💡 <strong>自訂標籤說明：</strong><br>
+                            • 自訂地圖連結的顯示文字，讓標籤更有意義<br>
+                            • <span id="labelCharCount" style="color: #059669;">0</span> / <span style="color: #d97706;">20</span> 字（限制 20 字元以節省容量）<br>
+                            • 留空則顯示預設「Google Maps」<br>
+                            • <strong>範例：</strong>辦公室、會議室A、客服中心、住家
+                        </div>
                     </div>
                 </div>
 
@@ -696,6 +706,25 @@
 
         document.getElementById('customAddress').addEventListener('input', updateAddressCharCount);
 
+        // 標籤字數統計
+        function updateLabelCharCount() {
+            const label = document.getElementById('googleMapsLabel').value;
+            const charCount = label.length;
+            const charCountElement = document.getElementById('labelCharCount');
+
+            charCountElement.textContent = charCount;
+
+            if (charCount <= 10) {
+                charCountElement.style.color = '#059669';
+            } else if (charCount <= 20) {
+                charCountElement.style.color = '#d97706';
+            } else {
+                charCountElement.style.color = '#dc2626';
+            }
+        }
+
+        document.getElementById('googleMapsLabel').addEventListener('input', updateLabelCharCount);
+
         function generateNFCUrl() {
             const cardType = document.getElementById('cardType').value;
             
@@ -752,6 +781,12 @@
                             return;
                         }
                         cardData.lm = normalizedId;
+
+                        // 收集自訂標籤
+                        const customLabel = safeTrim(document.getElementById('googleMapsLabel').value);
+                        if (customLabel) {
+                            cardData.ll = customLabel;
+                        }
                     }
                 } else {
                     cardData.addr = safeTrim(document.getElementById('customAddress').value);
