@@ -827,9 +827,17 @@ function generateBilingualVCard(data, lang = 'zh') {
     // 處理位置資訊：使用 GEO 屬性和 location 物件
     let geoLine = '';
     let locationLabel = '';
+    let mapUrl = '';
     if (data.location) {
+        // 優先處理 Google Maps ID
+        if (data.location.mapId && typeof data.location.mapId === 'string' && data.location.mapId.trim()) {
+            const mapId = data.location.mapId.trim();
+            if (/^[a-zA-Z0-9]{10,25}$/.test(mapId)) {
+                mapUrl = `\nURL;TYPE=pref:https://maps.app.goo.gl/${mapId}`;
+            }
+        }
         // 如果有經緯度座標，使用 GEO 屬性
-        if (data.location.coords &&
+        else if (data.location.coords &&
             typeof data.location.coords.lat === 'number' &&
             typeof data.location.coords.lng === 'number') {
             geoLine = `GEO:${data.location.coords.lat};${data.location.coords.lng}`;
@@ -857,7 +865,7 @@ EMAIL;TYPE=work:${data.email || ''}
 ${data.phone ? `TEL;TYPE=work,voice:${data.phone}` : ''}
 ${data.mobile ? `TEL;TYPE=cell,voice:${data.mobile}` : ''}
 ${hasCustomAddress ? `ADR;TYPE=work;CHARSET=UTF-8:;;${escapeVCardText(orgAddress)};;;;Taiwan` : ''}
-${geoLine}
+${geoLine}${mapUrl}
 ${data.avatar ? `PHOTO;TYPE=JPEG:${data.avatar}` : ''}
 ${greetingNote}${socialNote}${locationLabel}
 REV:${new Date().toISOString().replace(/[-:]/g, '').split('.')[0]}Z

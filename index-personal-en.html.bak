@@ -1,15 +1,15 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' fonts.googleapis.com; font-src 'self' fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self';">
     
-    <title>個人數位名片</title>
+    <title>Personal Digital Business Card</title>
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https:; object-src 'none';">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="assets/qrcode.min.js"></script>
     <script src="assets/dompurify.min.js"></script>
     <script src="assets/security-utils.js"></script>
@@ -181,9 +181,9 @@
 
         .department {
             font-size: 1.4em;
-            color: #6868ac;
-            margin-bottom: 8px;
-            font-weight: 600;
+            color: #6c757d;
+            margin-bottom: 12px;
+            font-weight: 400;
             letter-spacing: 0.01em;
             line-height: 1.3;
         }
@@ -404,8 +404,7 @@
             }
             
             .department {
-                font-size: 1.1em;
-                font-weight: 600;
+                font-size: 1em;
             }
             
             .contact-info {
@@ -478,25 +477,25 @@
 <body>
     <div id="card-container" style="display: none;">
         <div class="card" role="main" aria-label="數位名片">
-            <a href="https://github.com/moda-gov-tw/DB-Card" target="_blank" class="project-info" title="數位發展部開源專案 - 內建惡意資料防護，辨認網址確認有效防禦 - 隱私優先的數位名片系統">
-                🇹🇼 moda 開源專案
+            <a href="https://github.com/moda-gov-tw/DB-Card" target="_blank" class="project-info" title="Ministry of Digital Affairs Open Source Project - Built-in multi-layer security protection mechanisms effectively defend against malicious data attacks - Privacy-First Digital Business Card System">
+                🇹🇼 moda open source
             </a>
             
             <div class="avatar-section">
                 <img id="user-avatar" src="" alt="使用者頭像" class="avatar" role="img">
             </div>
-
+            
             <p id="user-department" class="department"></p>
             <h1 id="user-name" class="name"></h1>
             <p id="user-title" class="title"></p>
             <p id="user-organization" class="organization"></p>
             
             <div class="greeting" id="greeting">
-                歡迎認識我！
+                Nice to meet you!
             </div>
             
             <div class="contact-info">
-                <div class="contact-title">聯絡資訊</div>
+                <div class="contact-title">Contact Information</div>
                 <div class="contact-item">
                     <span class="contact-icon">📧</span>
                     <span class="contact-text">
@@ -522,27 +521,27 @@
             </div>
             
             <div id="social-info-section" class="social-info" style="display: none;">
-                <div class="social-info-title">🔗 社群連結</div>
+                <div class="social-info-title">🔗 Social Links</div>
                 <div id="social-info-content" class="social-info-content"></div>
             </div>
             
             <div class="action-section">
                 <a href="#" id="add-contact-btn" class="download-btn">
-                    📱 加入聯絡人
+                    📱 Add to Contacts
                 </a>
                 <p id="contact-helper-text" style="font-size: 0.9em; color: #4b5563; margin-top: 15px;"></p>
                 
                 <div class="qr-section">
                     <div class="qr-code" id="qrcode">
-                        QR 碼載入中...
+                        Loading QR Code...
                     </div>
-                    <div class="qr-label">這是這張名片的 QR code，你也可以請別人掃描來讀取這張名片</div>
+                    <div class="qr-label">This is the QR code for this card, you can also ask others to scan it to view this card</div>
 
                 </div>
                 
             <div class="privacy-banner">
-                <strong>🔒 隱私優先設計</strong> • 數位發展部開源專案 - 內建惡意資料防護，辨認網址確認有效防禦<br>
-                資料僅存於 NFC 卡片，無後端追蹤，完全自主掌控
+                <strong>🔒 Privacy-First Design</strong> • Ministry of Digital Affairs Open Source Project - Built-in multi-layer security protection mechanisms effectively defend against malicious data attacks<br>
+                Data stored only in NFC cards, no backend tracking, complete user control
             </div>
             </div>
         </div>
@@ -550,14 +549,14 @@
     
     <div id="loading-state" style="display: block; color: #1a1a1a; text-align: center; padding-top: 50px;">
         <h1>⏳</h1>
-        <h2>載入中</h2>
-        <p>正在解析數位名片資料...</p>
+        <h2>Loading</h2>
+        <p>Parsing digital business card data...</p>
     </div>
     
     <div id="access-denied" style="display: none; color: #333; text-align: center; padding-top: 50px;">
         <h1>🚫</h1>
-        <h2>無效資料</h2>
-        <p>無效資料</p>
+        <h2>Invalid Data</h2>
+        <p>Invalid data</p>
     </div>
 
     <script>
@@ -827,10 +826,10 @@
             document.getElementById('user-title').textContent = data.title;
             document.getElementById('user-department').textContent = data.department;
             
-            // 組織名稱（個人版可選）- 支援地圖連結與智慧去重
+            // Organization (optional for personal version) - with map linking and smart deduplication
             const orgElement = document.getElementById('user-organization');
             if (data.organization && data.organization.trim() !== '') {
-                // 智慧去重：檢查組織名稱與地址標籤是否相同
+                // Smart deduplication: Check if organization name matches location label
                 let showOrgElement = true;
                 if (data.location && data.location.label && data.location.label.trim()) {
                     if (data.organization.trim() === data.location.label.trim()) {
@@ -839,7 +838,7 @@
                 }
 
                 if (showOrgElement) {
-                    // 檢查是否有對應的地圖連結
+                    // Check if there's a corresponding map link
                     if (data.location && (data.location.mapId || (data.location.lat && data.location.lng))) {
                         let mapUrl = '';
                         if (data.location.mapId) {
@@ -856,14 +855,14 @@
                         }
 
                         if (mapUrl) {
-                            // 建立可點擊的連結
+                            // Create clickable link
                             const mapLink = createMapLinkElement(mapUrl, data.organization);
                             if (mapLink) {
-                                // 清空並設置連結
+                                // Clear and set link
                                 while (orgElement.firstChild) {
                                     orgElement.removeChild(orgElement.firstChild);
                                 }
-                                // 移除 inline-block 樣式，讓連結能正常顯示
+                                // Remove inline-block style to allow link to display properly
                                 orgElement.style.display = 'block';
                                 orgElement.style.marginBottom = '20px';
                                 mapLink.style.display = 'inline-block';
@@ -896,7 +895,7 @@
                 orgElement.style.display = 'none';
             }
             
-            // 頭像處理
+            // Avatar handling
             const avatar = document.getElementById('user-avatar');
             const avatarSection = document.querySelector('.avatar-section');
             
@@ -910,11 +909,11 @@
                 avatar.alt = data.name;
                 SecurityUtils.setSecureAttribute(avatar, 'src', data.avatar, [                'https://i.imgur.com',                'https://i.postimg.cc',                 'https://raw.githubusercontent.com',                'https://drive.google.com'            ]);
             } else {
-                // 沒有頭像時只隱藏圖片，保持區域空間
+                // Hide only the image when no avatar, keep the space
                 avatar.style.display = 'none';
             }
             
-            // 聯絡資訊
+            // Contact information
             const emailLink = document.getElementById('user-email');
             SecurityUtils.setSecureAttribute(emailLink, 'href', data.socialLinks.email);
             emailLink.textContent = data.email;
@@ -939,7 +938,7 @@
                 mobileItem.style.display = 'none';
             }
             
-            // 地址或地點（個人版可選）
+            // Address or Location (optional for personal version)
             const addressItem = document.getElementById('address-item');
             const addressElement = document.getElementById('user-address');
             let hasLocationContent = false;
@@ -1001,7 +1000,7 @@
             
             greetings = data.greetings;
             
-            // 社群媒體資訊
+            // Social media information
             const socialInfoSection = document.getElementById('social-info-section');
             const socialInfoContent = document.getElementById('social-info-content');
             if (data.socialLinks && data.socialLinks.socialNote && data.socialLinks.socialNote.trim() !== '') {
@@ -1045,20 +1044,20 @@
                     socialNote = data.socialLinks.socialNote.replace(/\n/g, '\\n');
                 }
 
-                // 處理地址或位置（優先順序：Google Maps ID > GPS 座標 > 文字地址）
+                // Handle address or location (Priority: Google Maps ID > GPS Coords > Text Address)
                 let addressField = '';
                 let locationNote = '';
                 if (data.location && data.location.mapId) {
-                    // 使用 URL 欄位存儲 Google Maps 分享連結
+                    // Use URL field to store Google Maps share link
                     addressField = `URL;TYPE=pref:https://maps.app.goo.gl/${data.location.mapId}`;
                 } else if (data.location && data.location.lat && data.location.lng) {
-                    // 使用 GEO 欄位存儲 GPS 座標
+                    // Use GEO field to store GPS coordinates
                     addressField = `GEO:${data.location.lat};${data.location.lng}`;
                 } else if (data.address) {
                     addressField = `ADR;TYPE=work;CHARSET=UTF-8:;;${data.address};;;;Taiwan`;
                 }
 
-                // 處理位置標籤
+                // Handle location label
                 if (data.location && data.location.label && data.location.label.trim()) {
                     locationNote = `NOTE;CHARSET=UTF-8:Location: ${data.location.label.trim()}`;
                 }
@@ -1098,24 +1097,24 @@
                     }
                     
                     // 創建文本節點和強調元素
-                    helperText.appendChild(document.createTextNode('下載後，請點擊'));
+                    helperText.appendChild(document.createTextNode('After download, please click '));
                     const openBold = document.createElement('b');
-                    openBold.textContent = '「開啟」';
+                    openBold.textContent = '"Open"';
                     helperText.appendChild(openBold);
-                    helperText.appendChild(document.createTextNode('或於'));
+                    helperText.appendChild(document.createTextNode(' or find the file in your '));
                     const notificationBold = document.createElement('b');
-                    notificationBold.textContent = '通知欄';
+                    notificationBold.textContent = 'notification bar';
                     helperText.appendChild(notificationBold);
-                    helperText.appendChild(document.createTextNode('中找到檔案，即可完成新增。'));
+                    helperText.appendChild(document.createTextNode(' to complete the addition.'));
                     helperText.appendChild(document.createElement('br'));
                     const appleBold = document.createElement('b');
-                    appleBold.textContent = 'Apple 裝置';
+                    appleBold.textContent = 'Apple devices';
                     helperText.appendChild(appleBold);
-                    helperText.appendChild(document.createTextNode('：請記得不要按左上方的完成，要下拉到'));
+                    helperText.appendChild(document.createTextNode(': Please remember not to tap "Done" in the top left, scroll down to '));
                     const addContactBold = document.createElement('b');
-                    addContactBold.textContent = '「加入聯絡人」';
+                    addContactBold.textContent = '"Add to Contacts"';
                     helperText.appendChild(addContactBold);
-                    helperText.appendChild(document.createTextNode('。'));
+                    helperText.appendChild(document.createTextNode('.'));
                     messageShown = true;
                 }
             });
@@ -1137,7 +1136,7 @@
                 try {
                     const decodedJson = decodeCardPayload(cardDataParam, { tryUrlDecode: true });
                     if (!decodedJson) {
-                        throw new Error('無法解析名片資料內容');
+                        throw new Error('Unable to parse business card content');
                     }
                     const rawData = JSON.parse(decodedJson);
                     
@@ -1162,7 +1161,7 @@
         }
 
         function convertCompactToFull(compactData) {
-            // 安全處理函數，過濾 DECRYPTION_FAILED 錯誤
+            // Safe handling function to filter DECRYPTION_FAILED errors
             const safeValue = (value) => {
                 if (!value || value === '[DECRYPTION_FAILED]') return '';
                 return value;
@@ -1179,7 +1178,7 @@
                     mobile: safeValue(compactData.m),
                     avatar: safeValue(compactData.a),
                     address: compactData.addr || '',
-                    greetings: compactData.g || ['歡迎認識我！'],
+                    greetings: compactData.g || ['Nice to meet you!'],
                     socialLinks: {
                         email: compactData.e ? `mailto:${compactData.e}` : '',
                         socialNote: safeValue(compactData.s)
@@ -1187,19 +1186,19 @@
                 }
             };
 
-            // 解析 location 物件（優先順序：Google Maps ID > GPS 座標 > 舊版 loc 物件）
+            // Parse location object (Priority: Google Maps ID > GPS Coords > Legacy loc object)
             if (compactData.lm && typeof compactData.lm === 'string' && compactData.lm.trim()) {
-                // Google Maps ID 模式
+                // Google Maps ID mode
                 result.data.location = {
                     mapId: compactData.lm.trim()
                 };
                 
-                // 添加自訂標籤支援
+                // Add custom label support
                 if (compactData.ll && typeof compactData.ll === 'string' && compactData.ll.trim()) {
                     result.data.location.label = compactData.ll.trim();
                 }
             } else if (compactData.lc && typeof compactData.lc === 'string' && compactData.lc.trim()) {
-                // GPS 座標字串模式 "lat,lng"
+                // GPS coordinates string mode "lat,lng"
                 const coords = compactData.lc.split(',');
                 if (coords.length === 2) {
                     const lat = parseFloat(coords[0].trim());
@@ -1213,7 +1212,7 @@
                 }
             } else if (compactData.loc && typeof compactData.loc === 'object' &&
                 compactData.loc.lat !== undefined && compactData.loc.lng !== undefined) {
-                // 舊版本相容性
+                // Legacy version compatibility
                 result.data.location = {
                     lat: compactData.loc.lat,
                     lng: compactData.loc.lng
@@ -1300,14 +1299,14 @@
                     
                     const errorElement = document.querySelector('#access-denied p');
                     if (errorElement) {
-                        errorElement.textContent = '請使用 NFC 卡片或包含資料的連結訪問。';
+                        errorElement.textContent = 'Please access via NFC card or link with data.';
                     }
                     return;
                 }
 
                 try {
                     if (!cardData.data || !cardData.data.name) {
-                        throw new Error('名片資料格式不正確');
+                        throw new Error('Invalid business card data format');
                     }
 
                     document.getElementById('loading-state').style.display = 'none';
@@ -1321,14 +1320,14 @@
                     setupVCardLink(cardData);
 
                 } catch (error) {
-                    console.error('名片資料驗證失敗:', error);
+                    console.error('Business card data validation failed:', error);
                     document.getElementById('loading-state').style.display = 'none';
                     document.getElementById('card-container').style.display = 'none';
                     document.getElementById('access-denied').style.display = 'block';
                     
                     const errorElement = document.querySelector('#access-denied p');
                     if (errorElement) {
-                        errorElement.textContent = error.message || '名片資料格式錯誤。';
+                        errorElement.textContent = error.message || 'Business card data format error.';
                     }
                 }
             }, 800);

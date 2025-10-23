@@ -181,9 +181,9 @@
 
         .department {
             font-size: 1.4em;
-            color: #6c757d;
-            margin-bottom: 12px;
-            font-weight: 400;
+            color: #6868ac;
+            margin-bottom: 8px;
+            font-weight: 600;
             letter-spacing: 0.01em;
             line-height: 1.3;
         }
@@ -404,7 +404,8 @@
             }
             
             .department {
-                font-size: 1em;
+                font-size: 1.1em;
+                font-weight: 600;
             }
             
             .contact-info {
@@ -484,10 +485,10 @@
             <div class="avatar-section">
                 <img id="user-avatar" src="" alt="使用者頭像" class="avatar" role="img">
             </div>
-            
+
+            <p id="user-department" class="department"></p>
             <h1 id="user-name" class="name"></h1>
             <p id="user-title" class="title"></p>
-            <p id="user-department" class="department"></p>
             <p id="user-organization" class="organization"></p>
             
             <div class="greeting" id="greeting">
@@ -1037,9 +1038,7 @@
                 const now = new Date();
                 const timestamp = now.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
                 
-                const currentOrigin = window.location.origin;
-                const currentPath = window.location.pathname.replace('/index-personal-en.html', '').replace(/\/$/, '');
-                const photoUrl = `${currentOrigin}${currentPath}/${data.avatar}`;
+                const photoUrl = data.avatar || '';
                 
                 let socialNote = '';
                 if (data.socialLinks && data.socialLinks.socialNote && data.socialLinks.socialNote.trim() !== '') {
@@ -1048,6 +1047,7 @@
 
                 // Handle address or location (Priority: Google Maps ID > GPS Coords > Text Address)
                 let addressField = '';
+                let locationNote = '';
                 if (data.location && data.location.mapId) {
                     // Use URL field to store Google Maps share link
                     addressField = `URL;TYPE=pref:https://maps.app.goo.gl/${data.location.mapId}`;
@@ -1058,20 +1058,26 @@
                     addressField = `ADR;TYPE=work;CHARSET=UTF-8:;;${data.address};;;;Taiwan`;
                 }
 
+                // Handle location label
+                if (data.location && data.location.label && data.location.label.trim()) {
+                    locationNote = `NOTE;CHARSET=UTF-8:Location: ${data.location.label.trim()}`;
+                }
+
                 const vcardContent = [
                     'BEGIN:VCARD',
                     'VERSION:3.0',
                     `PRODID:-//Personal Digital Business Card//Personal Card 1.0//EN`,
                     `FN;CHARSET=UTF-8:${fullName}`,
                     `N;CHARSET=UTF-8:${surname};${givenName};;;`,
-                    data.organization ? `ORG;CHARSET=UTF-8:${data.organization}` : '',
+                    data.organization ? `ORG;CHARSET=UTF-8:${data.organization};${data.department || ''}` : '',
                     `TITLE;CHARSET=UTF-8:${data.title || ''}`,
                     `EMAIL;TYPE=work:${data.email || ''}`,
                     data.phone ? `TEL;TYPE=work,voice:${formattedPhone}` : '',
                     data.mobile ? `TEL;TYPE=cell,voice:${formattedMobile}` : '',
                     addressField,
                     socialNote ? `NOTE;CHARSET=UTF-8:${socialNote}` : '',
-                    `PHOTO;TYPE=JPEG:${photoUrl}`,
+                    locationNote,
+                    photoUrl ? `PHOTO;TYPE=JPEG:${photoUrl}` : '',
                     `REV:${timestamp}`,
                     'END:VCARD'
                 ].filter(line => line.trim() !== '').join('\r\n');

@@ -33,11 +33,7 @@ html[lang="zh-TW"] .title {
 }
 
 html[lang="zh-TW"] .department {
-  font-size: 1.3em;
-  font-weight: 600;
-  color: #6868ac;
-  margin-bottom: 8px;
-  letter-spacing: 0.02em;
+  font-size: 1.25em;
 }
 
 /* 英文版字體設定 */
@@ -54,10 +50,7 @@ html[lang="en"] .title {
 }
 
 html[lang="en"] .department {
-  font-size: 1.3em;
-  font-weight: 600;
-  color: #6868ac;
-  margin-bottom: 8px;
+  font-size: 1.25em;
   letter-spacing: 0;
   line-height: 1.3;
 }

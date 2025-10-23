@@ -181,9 +181,9 @@
 
         .department {
             font-size: 1.4em;
-            color: #6868ac;
-            margin-bottom: 8px;
-            font-weight: 600;
+            color: #6c757d;
+            margin-bottom: 12px;
+            font-weight: 400;
             letter-spacing: 0.01em;
             line-height: 1.3;
         }
@@ -404,8 +404,7 @@
             }
             
             .department {
-                font-size: 1.1em;
-                font-weight: 600;
+                font-size: 1em;
             }
             
             .contact-info {
@@ -485,7 +484,7 @@
             <div class="avatar-section">
                 <img id="user-avatar" src="" alt="使用者頭像" class="avatar" role="img">
             </div>
-
+            
             <p id="user-department" class="department"></p>
             <h1 id="user-name" class="name"></h1>
             <p id="user-title" class="title"></p>

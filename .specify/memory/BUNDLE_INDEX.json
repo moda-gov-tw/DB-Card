@@ -1,34 +1,19 @@
 {
-  "last_checkpoint_id": "org-map-link-2025-10-23",
-  "last_lifecycle_epoch": "2025-10-23T15:41:07.963+08:00",
-  "last_design_id": "personal-card-location-refactor@v2.1.9",
-  "last_user_hash": "organization-map-link-integration",
+  "last_checkpoint_id": "visual-enhancement-2025-10-23",
+  "last_lifecycle_epoch": "2025-10-23T18:59:55+08:00",
+  "last_design_id": "visual-hierarchy-optimization@v2.2.0",
+  "last_user_hash": "visual-improvement-request",
   "files_digest": {
-    "index-bilingual-personal.html": {
-      "last_modified": "2025-10-23",
-      "key_features": ["組織地圖連結", "智慧去重邏輯", "雙語支援"],
-      "purpose": "雙語版組織名稱地圖連結與去重顯示"
-    },
-    "index-personal.html": {
-      "last_modified": "2025-10-23",
-      "key_features": ["組織地圖連結", "漸層背景設計", "hover 效果"],
-      "purpose": "單語中文版組織名稱地圖連結"
-    },
-    "index-personal-en.html": {
-      "last_modified": "2025-10-23",
-      "key_features": ["組織地圖連結", "漸層背景設計", "hover 效果"],
-      "purpose": "單語英文版組織名稱地圖連結"
-    },
-    "doc/personal-card-location-refactor.md": {
-      "last_modified": "2025-10-23",
-      "key_features": ["v2.1.9 功能文檔", "組織地圖連結整合設計"],
-      "purpose": "組織地圖連結功能設計文檔"
-    }
+    "index-personal.html": "部門欄位DOM順序調整+CSS樣式優化",
+    "index-personal-en.html": "部門欄位DOM順序調整+CSS樣式優化", 
+    "index-bilingual-personal.html": "部門欄位DOM順序調整+CSS樣式優化",
+    "assets/high-accessibility.css": "部門欄位視覺層次強化(顏色+字重+間距)",
+    "progress.md": "任務狀態更新至v2.2.0"
   },
-  "organization_map_features": {
-    "dual_functionality": "身份識別 + 地圖導航",
-    "smart_deduplication": "避免重複資訊顯示",
-    "visual_consistency": "hover 效果與設計統一",
-    "security": "使用 createMapLinkElement 安全驗證"
-  }
+  "promoted_facts": [
+    "部門欄位視覺層次優化完成",
+    "品牌色#6868ac提升識別度",
+    "三版本同步保持一致性",
+    "響應式布局完全相容"
+  ]
 }
