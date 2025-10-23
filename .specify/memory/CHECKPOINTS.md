@@ -1,5 +1,26 @@
 # CHECKPOINTS Manifest
 
+## bilingual-field-redesign-2025-10-23
+**時間**: 2025-10-23T19:28:25+08:00
+**版本**: v2.2.0
+**類型**: 個人版雙語欄位重新設計
+**狀態**: COMPLETED
+
+### 變更摘要
+- 重新設計個人版雙語版組織名稱與部門欄位排序排版
+- 欄位順序調整: Name → Title → Organization → Department
+- 視覺層次優化: 字體大小和字重遞減設計
+- 雙語一致性: 中英文版本樣式完全統一
+
+### 檔案清單
+- index-bilingual-personal.html (欄位順序重新設計)
+- assets/high-accessibility.css (雙語視覺層次優化)
+- progress.md (狀態更新)
+
+### DocOps Hash
+- STM: progress.md#bilingual-field-redesign-complete
+- LTM: .specify/memory/DECISIONS.md#2025-10-23-bilingual-closed
+
 ## version-history-2025-10-23
 **時間**: 2025-10-23T19:20:19+08:00
 **版本**: v2.2.0

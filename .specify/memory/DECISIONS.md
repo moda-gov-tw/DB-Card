@@ -1,5 +1,18 @@
 # DECISIONS Log
 
+## 2025-10-23 個人版雙語欄位重新設計 [CLOSED]
+**決策**: 重新設計個人版雙語版組織名稱與部門欄位的排序排版
+**狀態**: CLOSED
+**影響檔案**: index-bilingual-personal.html, assets/high-accessibility.css
+**關鍵變更**:
+- 欄位順序調整: Department → Name → Title → Organization 改為 Name → Title → Organization → Department
+- 視覺層次優化: 字體大小和字重遞減設計
+- 雙語一致性: 中英文版本樣式完全統一
+- 間距調整: Department margin-bottom 從 8px 調整為 35px
+
+**驗收標準**: ✅ 欄位順序邏輯清晰、✅ 視覺層次分明、✅ 雙語切換一致
+**回滾方案**: git checkout HEAD 還原兩個檔案
+
 ## 2025-10-23 README 版本歷程補充 [CLOSED]
 **決策**: 補充 README.md 中從 v2.1.3 到 v2.2.0 的版本更新說明
 **狀態**: CLOSED
