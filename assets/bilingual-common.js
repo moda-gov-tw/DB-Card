@@ -76,6 +76,113 @@ const base64Helper = (() => {
 const PREFERRED_LANGUAGE_KEY = 'preferredLanguage';
 
 const MAP_BASE_URL = 'https://www.google.com/maps';
+const GOOGLE_MAPS_SHARE_BASE = 'https://maps.app.goo.gl';
+const LOCATION_LABEL_MAX_LENGTH = 80;
+
+const sanitizeCoordinateValue = (value, type = 'lat') => {
+    if (typeof SecurityUtils !== 'undefined' && typeof SecurityUtils.normalizeCoordinate === 'function') {
+        const normalized = SecurityUtils.normalizeCoordinate(value, type, 6);
+        return typeof normalized === 'number' ? normalized : null;
+    }
+
+    if (value === null || value === undefined || value === '') {
+        return null;
+    }
+
+    const numeric = typeof value === 'number' ? value : parseFloat(String(value).trim());
+    if (!Number.isFinite(numeric)) {
+        return null;
+    }
+
+    const limit = type === 'lng' ? 180 : 90;
+    if (Math.abs(numeric) > limit) {
+        return null;
+    }
+
+    return parseFloat(numeric.toFixed(6));
+};
+
+const sanitizeLocationLabel = (label) => {
+    if (typeof label !== 'string') {
+        return '';
+    }
+
+    const normalized = label.replace(/\s+/g, ' ').trim();
+    if (!normalized) {
+        return '';
+    }
+
+    return normalized.slice(0, LOCATION_LABEL_MAX_LENGTH);
+};
+
+const normalizeMapId = (value) => {
+    if (typeof SecurityUtils !== 'undefined' && typeof SecurityUtils.normalizeGoogleMapsId === 'function') {
+        return SecurityUtils.normalizeGoogleMapsId(value);
+    }
+
+    if (typeof value !== 'string') {
+        return '';
+    }
+
+    const trimmed = value.trim();
+    if (!trimmed) {
+        return '';
+    }
+
+    const pattern = /(?:https?:\/\/)?(?:www\.)?maps\.app\.goo\.gl\/([a-zA-Z0-9]+)/i;
+    const match = trimmed.match(pattern);
+    const candidate = match && match[1] ? match[1] : trimmed;
+    return /^[a-zA-Z0-9]{10,25}$/.test(candidate) ? candidate : '';
+};
+
+const buildShareUrlFromMapId = (mapId) => {
+    if (!mapId) {
+        return '';
+    }
+
+    if (typeof SecurityUtils !== 'undefined' && typeof SecurityUtils.createGoogleMapsShareUrl === 'function') {
+        return SecurityUtils.createGoogleMapsShareUrl(mapId);
+    }
+
+    const shareUrl = `${GOOGLE_MAPS_SHARE_BASE}/${mapId}`;
+    if (typeof SecurityUtils !== 'undefined' && typeof SecurityUtils.validateMapURL === 'function') {
+        return SecurityUtils.validateMapURL(shareUrl) ? shareUrl : '';
+    }
+
+    return shareUrl;
+};
+
+const buildCoordsMapUrl = (lat, lng) => {
+    if (typeof SecurityUtils !== 'undefined' && typeof SecurityUtils.createMapUrlFromCoords === 'function') {
+        return SecurityUtils.createMapUrlFromCoords(lat, lng);
+    }
+
+    const safeLat = sanitizeCoordinateValue(lat, 'lat');
+    const safeLng = sanitizeCoordinateValue(lng, 'lng');
+    if (safeLat === null || safeLng === null) {
+        return '';
+    }
+
+    const url = `${MAP_BASE_URL}?q=${safeLat},${safeLng}`;
+    if (typeof SecurityUtils !== 'undefined' && typeof SecurityUtils.validateMapURL === 'function') {
+        return SecurityUtils.validateMapURL(url) ? url : '';
+    }
+
+    return url;
+};
+
+/**
+ * 從 Google Maps 分享連結中提取 ID
+ * @param {string} url - Google Maps 分享連結 (例如: https://maps.app.goo.gl/eKmgu7PqiUfJ2v5D9)
+ * @returns {string} 提取的 ID 或空字串
+ */
+function extractGoogleMapsId(url) {
+    const normalized = normalizeMapId(url);
+    if (!normalized) {
+        logSecurityEvent('extractGoogleMapsId', 'Invalid Google Maps URL or ID', { url });
+    }
+    return normalized;
+}
 
 const ALLOWED_AVATAR_ORIGINS = [
     'https://i.imgur.com',
@@ -202,13 +309,18 @@ function encodeCompact(data) {
         const parts = [];
 
         // 處理座標
-        if (location.coords && typeof location.coords.lat === 'number' && typeof location.coords.lng === 'number') {
-            parts.push(`${location.coords.lat},${location.coords.lng}`);
+        if (location.coords) {
+            const lat = sanitizeCoordinateValue(location.coords.lat, 'lat');
+            const lng = sanitizeCoordinateValue(location.coords.lng, 'lng');
+            if (lat !== null && lng !== null) {
+                parts.push(`${lat},${lng}`);
+            }
         }
 
         // 處理標籤
-        if (location.label && location.label.trim()) {
-            parts.push(location.label.trim());
+        const cleanedLabel = sanitizeLocationLabel(location.label);
+        if (cleanedLabel) {
+            parts.push(cleanedLabel);
         }
 
         return parts.join(';');
@@ -309,17 +421,25 @@ function decodeCompact(encoded) {
 
                 // 檢查第一部分是否為座標
                 if (parts[0] && parts[0].includes(',')) {
-                    const [lat, lng] = parts[0].split(',').map(s => parseFloat(s.trim()));
-                    if (!isNaN(lat) && !isNaN(lng)) {
+                    const [rawLat, rawLng] = parts[0].split(',');
+                    const lat = sanitizeCoordinateValue(rawLat, 'lat');
+                    const lng = sanitizeCoordinateValue(rawLng, 'lng');
+                    if (lat !== null && lng !== null) {
                         location.coords = { lat, lng };
                     }
                     // 如果有第二部分，則為 label
                     if (parts[1]) {
-                        location.label = parts[1].trim();
+                        const cleanedLabel = sanitizeLocationLabel(parts[1]);
+                        if (cleanedLabel) {
+                            location.label = cleanedLabel;
+                        }
                     }
                 } else {
                     // 沒有逗號，整個字串為 label
-                    location.label = locationStr.trim();
+                    const cleanedLabel = sanitizeLocationLabel(locationStr);
+                    if (cleanedLabel) {
+                        location.label = cleanedLabel;
+                    }
                 }
 
                 return Object.keys(location).length > 0 ? location : null;
@@ -917,16 +1037,40 @@ function createSocialElement(platform, url, buttonText, brandColor, displayUrl =
 function generateMapLink(location) {
     if (!location) return '';
 
-    const { coords, label } = location;
+    const { coords, label, mapId } = location;
+
+    if (mapId) {
+        const normalizedId = normalizeMapId(mapId);
+        if (normalizedId) {
+            const shareUrl = buildShareUrlFromMapId(normalizedId);
+            if (shareUrl) {
+                return shareUrl;
+            }
+        }
+    }
 
     // 優先使用座標，否則使用標籤搜尋
     if (coords && typeof coords.lat === 'number' && typeof coords.lng === 'number') {
-        // 使用座標: https://www.google.com/maps?q=25.0330,121.5654
-        return `${MAP_BASE_URL}?q=${coords.lat},${coords.lng}`;
+        const lat = sanitizeCoordinateValue(coords.lat, 'lat');
+        const lng = sanitizeCoordinateValue(coords.lng, 'lng');
+        if (lat !== null && lng !== null) {
+            const coordsUrl = buildCoordsMapUrl(lat, lng);
+            if (coordsUrl) {
+                return coordsUrl;
+            }
+            return `${MAP_BASE_URL}?q=${lat},${lng}`;
+        }
     } else if (label && label.trim()) {
         // 使用標籤搜尋: https://www.google.com/maps/search/?api=1&query=台北101
-        const encodedLabel = encodeURIComponent(label.trim());
-        return `${MAP_BASE_URL}/search/?api=1&query=${encodedLabel}`;
+        const safeLabel = sanitizeLocationLabel(label);
+        if (safeLabel) {
+            const encodedLabel = encodeURIComponent(safeLabel);
+            const searchUrl = `${MAP_BASE_URL}/search/?api=1&query=${encodedLabel}`;
+            if (typeof SecurityUtils !== 'undefined' && typeof SecurityUtils.validateMapURL === 'function') {
+                return SecurityUtils.validateMapURL(searchUrl) ? searchUrl : '';
+            }
+            return searchUrl;
+        }
     }
 
     return '';

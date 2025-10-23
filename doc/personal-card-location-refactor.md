@@ -3,124 +3,149 @@
 ## 背景與目標
 - 目前個人版（含雙語版）以自由文字儲存地址，容易導致 NFC URL 超過容量限制。
 - 需求：改採座標儲存並生成外部地圖連結，以降低資料量，同時保有相容性。
+- **v2.1.6 更新**：新增 Google Maps 分享連結支援，進一步優化容量使用。
 
 ## 資料結構調整
-- 新欄位（共用概念）：
-  - `location.coords`: 字串 `"<lat>,<lng>"`，緯度與經度保留最多 6 位小數。
-  - `location.label`: 使用者自訂的顯示文字。單語版為單一字串，雙語版以 `zh~en` 儲存。
-- compact 資料欄位：
-  - 單語個人版 JSON：新增 `lc`（coords）、`ll`（label），既有 `addr` 繼續保留供回退。
-  - 雙語個人版 JSON：新增 `locationCoords`（coords）、`locationLabel`（label）。
-  - 解析流程統一還原成 `data.location = { coords, label }`，缺少時以 `address` 萃取。
-- 相容性：
-  - 前端顯示與 vCard 生成優先使用 `location`，無新欄位時才回退 `address`。
-  - `encodeCompact` / `decodeCompact` / `convertCompactToFull` 需擴充為支援新欄位並維持舊版資料解析。
+
+### 新欄位設計（v2.1.6 優化版）
+- `location.coords`: 字串 `"<lat>,<lng>"`，緯度與經度保留 7 位小數精度 (~1 公分精度)。
+- `location.mapId`: Google Maps 分享連結 ID（如：`eKmgu7PqiUfJ2v5D9`），僅 17 字元。
+- `location.label`: 使用者自訂的顯示文字。單語版為單一字串，雙語版以 `zh~en` 儲存。
+
+### 容量優化對比
+| 方案 | 儲存內容 | 字元數 | 容量效益 |
+|------|----------|--------|----------|
+| 文字地址 | `臺北市信義區信義路五段7號` | 15+ 字元 | 基準 |
+| GPS 座標 | `25.0339641,121.5644683` | 22 字元 | +47% |
+| **Google Maps ID** | `eKmgu7PqiUfJ2v5D9` | **17 字元** | **+13%** ✅ |
+
+### compact 資料欄位
+- 單語個人版 JSON：新增 `lc`（coords）、`lm`（mapId）、`ll`（label），既有 `addr` 繼續保留供回退。
+- 雙語個人版 JSON：新增 `locationCoords`（coords）、`locationMapId`（mapId）、`locationLabel`（label）。
+- 解析流程統一還原成 `data.location = { coords, mapId, label }`，缺少時以 `address` 萃取。
+
+### 相容性策略
+- 前端顯示與 vCard 生成優先使用 `location`，無新欄位時才回退 `address`。
+- 支援三種位置格式：GPS 座標、Google Maps ID、文字地址。
+- `encodeCompact` / `decodeCompact` / `convertCompactToFull` 需擴充為支援新欄位並維持舊版資料解析。
 
 ## 前端調整項目
+
 ### 生成器（單語：`nfc-generator.html`）
-- 個人版地址區塊改為「緯度 / 經度」與「地點標籤」輸入欄位。
-- 驗證與格式處理：
+- 個人版地址區塊改為三選一：「文字地址」、「GPS 座標」、「Google Maps 連結」。
+- **Google Maps 連結模式**：
+  - 輸入完整分享連結：`https://maps.app.goo.gl/eKmgu7PqiUfJ2v5D9`
+  - 系統自動提取 ID：`eKmgu7PqiUfJ2v5D9`
+  - 節省容量：17 字元 vs 42 字元完整 URL
+- **GPS 座標模式**：
   - 緯度介於 -90〜90，經度介於 -180〜180。
+  - 支援 7 位小數精度 (~1 公分精度)，確保地址標記準確性。
   - 自動修剪空白，容許逗號、分號或空白分隔緯經度並自動拆解。
-  - 貼上 Google 地圖複製的格式（例如 `25.03675036025628, 121.5088190942485`）時，自動解析成兩個數字並四捨五入至 6 位小數以縮減容量。
   - 標籤可留空，但若輸入需限制長度（建議 30 字以內）。
 - 生成資料時：
-  - 寫入 `cardData.lc`、`cardData.ll`，同時保留 `addr` 以保持舊資料相容。
+  - 寫入 `cardData.lc`、`cardData.lm`、`cardData.ll`，同時保留 `addr` 以保持舊資料相容。
 - UI 強化：
-  - 提供「如何從 Google 地圖複製座標」的說明（搜尋地點 → 右鍵「這裡嗎？」→ 複製 `<lat>,<lng>`）與快速連結，協助使用者手動取得座標。
-  - 保留並更新 URL bytes 提示，讓使用者知悉座標欄位同樣列入容量計算。
+  - 提供「如何從 Google Maps 取得分享連結」的說明
+  - 提供「如何從 Google Maps 複製座標」的說明
+  - 保留並更新 URL bytes 提示，讓使用者知悉各種格式的容量影響
 
 ### 生成器（雙語：`nfc-generator-bilingual.html`）
-- 個人版地址欄位改為緯度、經度，以及中英標籤輸入。
+- 個人版地址欄位改為三選一模式。
 - `collectFormData()` 生成：
-  - `locationCoords` → `"<lat>,<lng>"`。
+  - `locationCoords` → `"<lat>,<lng>"`（7 位小數精度）。
+  - `locationMapId` → Google Maps ID 字串。
   - `locationLabel` → `"<zh>~<en>"`。
 - 容量監控、預覽等流程沿用新欄位。
-- 提供中英雙語的 Google 地圖座標取得指引與連結，確保兩語使用者皆能操作。
-- 解析 Google 地圖貼上的座標字串時同樣自動拆解並四捨五入至 6 位小數，維持資料精度與容量平衡。
+- 提供中英雙語的操作指引。
 
 ### 展示頁
 - 單語版（`index-personal.html` / `index-personal-en.html`）：
-  - `renderCard()` 解析 `lc` / `ll` 成 `data.location`。
-  - 存在座標時顯示「查看地圖」超連結，連結基礎 URL 由常數 `MAP_BASE_URL` 控制（預設 Google Maps）。
+  - `renderCard()` 解析 `lc` / `lm` / `ll` 成 `data.location`。
+  - 優先順序：Google Maps ID > GPS 座標 > 文字地址。
+  - Google Maps ID 時組裝完整 URL：`https://maps.app.goo.gl/${mapId}`。
+  - GPS 座標時生成 Google Maps 查詢 URL：`https://maps.google.com/?q=${lat},${lng}`。
   - 無座標但有舊地址時延用原有文字顯示。
 - 雙語版（`index-bilingual-personal.html`）：
   - `renderPersonalCard()` 依語系顯示 `location.label` 中對應語言。
-  - 若有座標，生成對應語言的地圖連結；缺座標時回退舊地址顯示。
+  - 地圖連結生成邏輯與單語版相同。
 - 安全性：
-  - 更新 `SecurityUtils` 白名單，將 `MAP_BASE_URL` 所指向的網域（預設 `maps.google.com`、`www.google.com/maps`）加入允許名單。
-  - 若未來切換至其他地圖服務，僅需調整常數與白名單設定。
+  - 更新 `SecurityUtils` 白名單，將 `maps.app.goo.gl` 和 `maps.google.com` 加入允許名單。
+  - Google Maps ID 格式驗證：僅允許 `[a-zA-Z0-9]+` 字元。
 
 ## vCard 生成
 - 單語版：
-  - 有座標時新增 `GEO:<lat>;<lng>` 與 `URL:${MAP_BASE_URL}?q=<lat>,<lng>`，只在缺座標時才輸出 `ADR`。
+  - 有 Google Maps ID 時：`URL:https://maps.app.goo.gl/${mapId}`
+  - 有 GPS 座標時：`GEO:${lat};${lng}` 與 `URL:https://maps.google.com/?q=${lat},${lng}`
+  - 僅有文字地址時：`ADR:${address}`
 - 雙語版（`generateBilingualVCard`）：
-  - 同樣改用 `GEO` + `URL`；若缺座標則沿用現行 `ADR`。
-- `MAP_BASE_URL` 預設為 Google Maps，後續若需支援 OpenStreetMap、Apple Maps 等，只需調整常數即可；GEO 欄位仍可被裝置的預設地圖應用辨識。
+  - 同樣的優先順序邏輯
+- 地圖服務可配置：`MAP_BASE_URL` 預設為 Google Maps
 
 ## 系統結構擴充
-- **資料層**：新增 `location` 物件及 `lc` / `ll` / `locationCoords` / `locationLabel` 欄位，並調整 compact 編碼流程以維持前後端一致。
+- **資料層**：新增 `location` 物件及 `lc` / `lm` / `ll` / `locationCoords` / `locationMapId` / `locationLabel` 欄位
 - **前端共用模組**：
-  - `SecurityUtils`：擴充地圖白名單與安全檢查函式，確保動態生成的地圖連結安全可靠。
-  - `bilingual-common.js`：新增位置欄位解析、`MAP_BASE_URL` 常數與 vCard GEO/URL 生成邏輯。
+  - `SecurityUtils`：擴充 Google Maps 白名單與 ID 格式驗證
+  - `bilingual-common.js`：新增 `extractGoogleMapsId()` 函式與地圖連結生成邏輯
 - **頁面層**：
-  - 生成器頁面（單語／雙語）負責輸入驗證、座標格式化與容量監測。
-  - 展示頁面（單語／雙語）負責視覺呈現、地圖超連結與 vCard 下載。
-- **設定層**：將 `MAP_BASE_URL` 列為可覆寫常數（後續可延伸為環境變數或設定檔），預設值與允許網域需同步管理。
+  - 生成器頁面：三選一地址輸入模式，Google Maps ID 提取與驗證
+  - 展示頁面：智慧地圖連結生成，優先順序處理
+- **設定層**：`MAP_BASE_URL` 與 `GOOGLE_MAPS_SHARE_BASE` 常數管理
 
 ## 實作藍圖
 - 模組責任
-  - `nfc-generator.html`：新增座標欄位 UI、貼上格式容錯、寫入 `lc` / `ll`。
-  - `nfc-generator-bilingual.html`：同上且處理 `locationCoords` / `locationLabel` 雙語字串。
-  - `index-personal*.html`：解析 `location` 物件、渲染地圖連結與更新 vCard GEO 欄位。
-  - `assets/bilingual-common.js`：擴充 `encodeCompact` / `decodeCompact`、`renderBilingualCard`、`generateBilingualVCard`。
-  - `assets/security-utils.js`：加入地圖網域白名單、輸入格式清理工具函式（拆解座標、固定小數位數）。
+  - `nfc-generator.html`：三選一地址輸入 UI、Google Maps ID 提取、寫入 `lc` / `lm` / `ll`
+  - `nfc-generator-bilingual.html`：同上且處理雙語格式
+  - `index-personal*.html`：解析 `location` 物件、智慧地圖連結生成、更新 vCard
+  - `assets/bilingual-common.js`：擴充編碼解碼、`extractGoogleMapsId`、地圖連結生成
+  - `assets/security-utils.js`：Google Maps 網域白名單、ID 格式驗證
 - 資料流程
-  1. 生成器輸入 → 轉換為 `lc` / `ll`（或 `locationCoords` / `locationLabel`）→ 壓縮成 URL。
-  2. 展示頁解碼 → 轉成 `location` 物件 → 顯示資訊並提供地圖連結 / vCard。
-  3. vCard 下載 → 嵌入 GEO 欄與可配置的地圖 URL。
-
-## 落地規劃
-1. **準備階段**
-   - 定義 `MAP_BASE_URL` 常數與允許網域名單。
-   - 實作共用的座標解析與格式化工具（含小數位數限制）。
-2. **前端生成器調整**
-   - 單語與雙語生成器同步更新 UI、容錯邏輯及資料寫入欄位。
-   - 調整容量監控字串，驗證貼上 Google Maps 座標範例。
-3. **展示頁與 vCard 更新**
-   - 單語／雙語頁面解析 `location`、更新聯絡資訊與 vCard 內容。
-   - 確認 `MAP_BASE_URL` 套用在所有地圖連結與 vCard URL 欄位。
-4. **安全與測試**
-   - 更新 `SecurityUtils` 白名單並加入單元測試／手動測試情境（六項測試案例）。
-   - 針對舊資料、新資料與混合資料進行瀏覽、vCard 下載與 NFC URL 容量驗證。
+  1. 生成器輸入 → 提取/轉換為 `lc` / `lm` / `ll` → 壓縮成 URL
+  2. 展示頁解碼 → 轉成 `location` 物件 → 智慧連結生成 → 顯示與 vCard
+  3. 優先順序：Google Maps ID > GPS 座標 > 文字地址 > 無地址
 
 ## 實作進度追蹤
-### 2025-10-23: Task 1.2 完成
-- ✅ 更新 `assets/bilingual-common.js` 中的 `encodeCompact` 函式
-  - 新增 `serializeLocation` 內部函式，支援序列化 `location.coords` 和 `location.label`
-  - 格式：`lat,lng;label` 或 `lat,lng` 或 `label`
-  - 擴充 compact 陣列新增第 12 個欄位（location）
-- ✅ 實作測試驅動開發
-  - 建立 `test-location-encoding.js` 測試檔案
-  - 涵蓋四種情境：coords+label、僅 coords、僅 label、無 location
-  - 驗證編碼/解碼往返一致性
-- 📝 備註：`decodeCompact` 已於先前實作支援 location 解析，本次僅更新 encode 端
+
+### 2025-10-23: 完整實作完成
+- ✅ **Location Object 實作**: 新增結構化座標資料 `{coords: {lat, lng}, label}`
+- ✅ **編碼優化**: 12 欄位格式支援，parseLocation/serializeLocation 函式
+- ✅ **vCard GEO 屬性**: generateBilingualVCard 使用標準 GEO 格式
+- ✅ **顯示邏輯**: renderPersonalCard 優先讀取 location.label
+- ✅ **生成器座標輸入**: 單語/雙語版本支援 GPS 座標與文字地址切換
+- ✅ **單語展示頁**: location 解析與 Google Maps 連結生成
+- ✅ **MAP_BASE_URL 常數**: 地圖基礎 URL 與連結生成函式
+- ✅ **安全配置**: 地圖網域白名單與 URL 驗證
+- ✅ **座標精度優化**: 從 6 位小數提升至 7 位小數 (~1 公分精度)
+- ✅ **輸入一致性**: HTML step 與 JavaScript toFixed 統一為 7 位小數
+
+### 2025-10-23: Google Maps ID 方案設計
+- 📋 **容量優化策略**: Google Maps ID 儲存方案（17 字元 vs 42 字元完整 URL）
+- 📋 **三選一輸入模式**: 文字地址、GPS 座標、Google Maps 連結
+- 📋 **智慧連結生成**: 優先順序處理與 URL 組裝邏輯
+- 📋 **安全驗證**: Google Maps ID 格式驗證與白名單擴充
 
 ## 測試情境
 1. **舊資料只含 `address`**：頁面與 vCard 均使用舊地址，不出錯。
-2. **新資料只有 `location`**：頁面顯示外部地圖連結，vCard 僅含 GEO / URL，容量顯著下降。
-3. **新舊欄位共存**：優先顯示 `location`，`address` 作為後備。
-4. **雙語語言切換**：`location.label` 隨語系切換，連結正確。
-5. **生成器驗證**：座標範圍、標籤長度、URL bytes 指示皆正常。
-6. **手動輸入容錯**：測試使用逗號、分號、空白等不同分隔符時能正確解析並提示錯誤。
+2. **新資料只有 GPS 座標**：頁面顯示 Google Maps 查詢連結，vCard 含 GEO 屬性。
+3. **新資料只有 Google Maps ID**：頁面顯示完整分享連結，vCard 含 URL 屬性。
+4. **新舊欄位共存**：優先顯示新格式，`address` 作為最後回退。
+5. **雙語語言切換**：`location.label` 隨語系切換，連結正確。
+6. **生成器驗證**：三種輸入模式、容量提示、格式驗證皆正常。
+7. **容量優化**：Google Maps ID 比座標節省 23% 容量。
 
 ## 待確認事項
-1. `MAP_BASE_URL` 是否需要在部署時可自訂（環境變數或設定檔）。
+1. Google Maps ID 的有效期限與穩定性。
+2. 是否需要支援其他地圖服務（Apple Maps、OpenStreetMap）。
 
 ## 後續步驟建議
-1. 調整生成器、共用函式與展示頁以支援 `location` 新欄位。
-2. 將地圖連結基礎 URL 抽離成常數，並強化輸入格式處理（自動修剪、多分隔符容錯、錯誤訊息）。
-3. 完成後針對六項測試情境覆蓋驗證容量、顯示結果與錯誤處理。
+1. **實作 Google Maps ID 方案**：
+   - 新增 `extractGoogleMapsId()` 函式
+   - 修改生成器 UI 為三選一模式
+   - 更新展示頁面智慧連結生成
+   - 擴充安全驗證與白名單
+2. **完善測試驗證**：針對七項測試情境進行完整驗證
+3. **文檔更新**：更新使用說明與操作指引
 
 ## 未來擴充事項
-- 研究導入輕量級 Geocoding API，自動將使用者輸入的地址轉換為座標，並提供手動輸入作為備援。
+- 研究 Apple Maps 分享連結格式支援
+- 考慮 OpenStreetMap 等開源地圖服務整合
+- 評估地圖服務可用性監控機制

@@ -18,6 +18,7 @@
         'https://maps.google.com',
         'https://maps.app.goo.gl'
     ];
+    const GOOGLE_MAPS_SHARE_BASE = 'https://maps.app.goo.gl';
 
     function encodeBinaryString(bytes) {
         let binary = '';
@@ -33,6 +34,7 @@
 
         // 公開地圖網域白名單常數
         ALLOWED_MAP_DOMAINS: ALLOWED_MAP_DOMAINS,
+        GOOGLE_MAPS_SHARE_BASE: GOOGLE_MAPS_SHARE_BASE,
 
         /**
          * Base64 編碼（支援 UTF-8 字元）
@@ -261,9 +263,6 @@
          * @returns {boolean} 是否為安全的地圖URL
          */
         validateMapURL: function(url) {
-            // 調試日誌
-            console.log('[DEBUG] validateMapURL called with:', { url: url });
-
             try {
                 // 基礎驗證：空值檢查
                 if (typeof url !== 'string' || !url.trim()) {
@@ -319,6 +318,134 @@
                 });
                 return false;
             }
+        },
+
+        /**
+         * 驗證 Google Maps ID 格式
+         * @param {string} mapId - Google Maps 分享連結 ID
+         * @returns {boolean} 是否為有效的 Google Maps ID
+         */
+        validateGoogleMapsId: function(mapId) {
+            if (!mapId || typeof mapId !== 'string') {
+                return false;
+            }
+
+            const trimmed = mapId.trim();
+
+            // Google Maps ID 格式：僅允許英數字，長度通常為 10-25 字元
+            const isValid = /^[a-zA-Z0-9]{10,25}$/.test(trimmed);
+
+            if (!isValid) {
+                this.logSecurityEvent('validateGoogleMapsId', 'Invalid Google Maps ID format', {
+                    mapId: trimmed
+                });
+            }
+
+            return isValid;
+        },
+
+        /**
+         * 規範化座標值，限制數值範圍與小數精度
+         * @param {number|string} value - 原始座標值
+         * @param {'lat'|'lng'} type - 座標類型
+         * @param {number} decimals - 保留的小數位數
+         * @returns {number|null} 規範化後的座標，失敗時返回 null
+         */
+        normalizeCoordinate: function(value, type = 'lat', decimals = 6) {
+            if (value === null || value === undefined || value === '') {
+                return null;
+            }
+
+            const limit = type === 'lng' ? 180 : 90;
+            const numeric = typeof value === 'number' ? value : parseFloat(String(value).trim());
+
+            if (!Number.isFinite(numeric)) {
+                this.logSecurityEvent('normalizeCoordinate', 'Non-numeric coordinate rejected', {
+                    value: value,
+                    type: type
+                });
+                return null;
+            }
+
+            if (Math.abs(numeric) > limit) {
+                this.logSecurityEvent('normalizeCoordinate', 'Coordinate out of range', {
+                    value: numeric,
+                    type: type,
+                    limit: limit
+                });
+                return null;
+            }
+
+            const clampedDecimals = Number.isInteger(decimals) && decimals >= 0 && decimals <= 10 ? decimals : 6;
+            const normalized = parseFloat(numeric.toFixed(clampedDecimals));
+
+            if (!Number.isFinite(normalized)) {
+                this.logSecurityEvent('normalizeCoordinate', 'Failed to normalize coordinate', {
+                    value: numeric,
+                    type: type
+                });
+                return null;
+            }
+
+            return normalized;
+        },
+
+        /**
+         * 從分享連結或 ID 中提取並驗證 Google Maps ID
+         * @param {string} input - 分享連結或 ID
+         * @returns {string} 驗證後的 Google Maps ID，失敗時返回空字串
+         */
+        normalizeGoogleMapsId: function(input) {
+            if (typeof input !== 'string') {
+                return '';
+            }
+
+            const trimmed = input.trim();
+            if (!trimmed) {
+                return '';
+            }
+
+            const pattern = /(?:https?:\/\/)?(?:www\.)?maps\.app\.goo\.gl\/([a-zA-Z0-9]+)/i;
+            const match = trimmed.match(pattern);
+            const candidate = match && match[1] ? match[1] : trimmed;
+
+            if (!this.validateGoogleMapsId(candidate)) {
+                return '';
+            }
+
+            return candidate;
+        },
+
+        /**
+         * 建立 Google Maps 分享連結
+         * @param {string} mapId - 已驗證的 Google Maps ID
+         * @returns {string} 安全的分享連結或空字串
+         */
+        createGoogleMapsShareUrl: function(mapId) {
+            if (!this.validateGoogleMapsId(mapId)) {
+                return '';
+            }
+
+            const shareUrl = `${GOOGLE_MAPS_SHARE_BASE}/${mapId}`;
+            return this.validateMapURL(shareUrl) ? shareUrl : '';
+        },
+
+        /**
+         * 建立座標導向的 Google Maps 連結
+         * @param {number|string} lat - 緯度
+         * @param {number|string} lng - 經度
+         * @returns {string} 安全的地圖連結或空字串
+         */
+        createMapUrlFromCoords: function(lat, lng) {
+            const normalizedLat = this.normalizeCoordinate(lat, 'lat');
+            const normalizedLng = this.normalizeCoordinate(lng, 'lng');
+
+            if (normalizedLat === null || normalizedLng === null) {
+                return '';
+            }
+
+            const url = `https://www.google.com/maps?q=${normalizedLat},${normalizedLng}`;
+            return this.validateMapURL(url) ? url : '';
         },
 
         /**

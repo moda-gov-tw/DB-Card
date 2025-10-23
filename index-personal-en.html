@@ -651,6 +651,110 @@
             return `<a href="${safeUrl}" target="_blank" rel="noopener" class="social-link">${safeLabel}</a>`;
         }
 
+        function getAllowedMapOrigins() {
+            if (window.SecurityUtils && Array.isArray(SecurityUtils.ALLOWED_MAP_DOMAINS)) {
+                return SecurityUtils.ALLOWED_MAP_DOMAINS;
+            }
+            return [];
+        }
+
+        function normalizeCoordinateValue(value, type = 'lat') {
+            if (window.SecurityUtils && typeof SecurityUtils.normalizeCoordinate === 'function') {
+                const normalized = SecurityUtils.normalizeCoordinate(value, type, 6);
+                return typeof normalized === 'number' ? normalized : null;
+            }
+
+            if (value === null || value === undefined || value === '') {
+                return null;
+            }
+
+            const numeric = typeof value === 'number' ? value : parseFloat(String(value).trim());
+            if (!Number.isFinite(numeric)) {
+                return null;
+            }
+
+            const limit = type === 'lng' ? 180 : 90;
+            if (Math.abs(numeric) > limit) {
+                return null;
+            }
+
+            return parseFloat(numeric.toFixed(6));
+        }
+
+        function formatCoordinate(value, type = 'lat') {
+            const normalized = normalizeCoordinateValue(value, type);
+            return normalized === null ? '' : normalized.toString();
+        }
+
+        function normalizeMapId(value) {
+            if (window.SecurityUtils && typeof SecurityUtils.normalizeGoogleMapsId === 'function') {
+                return SecurityUtils.normalizeGoogleMapsId(value);
+            }
+
+            if (typeof value !== 'string') {
+                return '';
+            }
+
+            const trimmed = value.trim();
+            if (!trimmed) {
+                return '';
+            }
+
+            return /^[a-zA-Z0-9]{10,25}$/.test(trimmed) ? trimmed : '';
+        }
+
+        function buildMapShareUrl(mapId) {
+            if (!mapId) {
+                return '';
+            }
+
+            if (window.SecurityUtils && typeof SecurityUtils.createGoogleMapsShareUrl === 'function') {
+                return SecurityUtils.createGoogleMapsShareUrl(mapId);
+            }
+
+            return `https://maps.app.goo.gl/${mapId}`;
+        }
+
+        function buildMapUrlFromCoords(lat, lng) {
+            if (window.SecurityUtils && typeof SecurityUtils.createMapUrlFromCoords === 'function') {
+                return SecurityUtils.createMapUrlFromCoords(lat, lng);
+            }
+
+            const latValue = normalizeCoordinateValue(lat, 'lat');
+            const lngValue = normalizeCoordinateValue(lng, 'lng');
+            if (latValue === null || lngValue === null) {
+                return '';
+            }
+
+            return `https://www.google.com/maps?q=${latValue},${lngValue}`;
+        }
+
+        function createMapLinkElement(url, textContent) {
+            if (!url) {
+                return null;
+            }
+
+            if (window.SecurityUtils && typeof SecurityUtils.validateMapURL === 'function') {
+                if (!SecurityUtils.validateMapURL(url)) {
+                    return null;
+                }
+            }
+
+            const link = document.createElement('a');
+            link.className = 'contact-link';
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+
+            if (window.SecurityUtils && typeof SecurityUtils.setSecureAttribute === 'function') {
+                SecurityUtils.setSecureAttribute(link, 'href', url, getAllowedMapOrigins());
+            } else {
+                link.href = url;
+            }
+
+            link.textContent = textContent;
+            return link;
+        }
+
         function typeText(text, callback) {
             greetingElement.textContent = '';
             let i = 0;
@@ -721,14 +825,21 @@
             
             // Avatar handling
             const avatar = document.getElementById('user-avatar');
-            avatar.onload = function() {
-                this.style.display = 'block';
-            };
-            avatar.onerror = function() {
-                this.style.display = 'none';
-            };
-            avatar.alt = data.name;
-            SecurityUtils.setSecureAttribute(avatar, 'src', data.avatar, [                'https://i.imgur.com',                'https://i.postimg.cc',                 'https://raw.githubusercontent.com',                'https://drive.google.com'            ]);
+            const avatarSection = document.querySelector('.avatar-section');
+            
+            if (data.avatar && data.avatar.trim()) {
+                avatar.onload = function() {
+                    this.style.display = 'block';
+                };
+                avatar.onerror = function() {
+                    this.style.display = 'none';
+                };
+                avatar.alt = data.name;
+                SecurityUtils.setSecureAttribute(avatar, 'src', data.avatar, [                'https://i.imgur.com',                'https://i.postimg.cc',                 'https://raw.githubusercontent.com',                'https://drive.google.com'            ]);
+            } else {
+                // Hide only the image when no avatar, keep the space
+                avatar.style.display = 'none';
+            }
             
             // Contact information
             const emailLink = document.getElementById('user-email');
@@ -757,49 +868,57 @@
             
             // Address or Location (optional for personal version)
             const addressItem = document.getElementById('address-item');
-            if (data.location && data.location.lat && data.location.lng) {
-                // Display GPS coordinates as Google Maps link
-                const addressElement = document.getElementById('user-address');
-                // Clear element
-                while (addressElement.firstChild) {
-                    addressElement.removeChild(addressElement.firstChild);
-                }
-                // Create Google Maps link
-                const mapsLink = document.createElement('a');
-                mapsLink.className = 'contact-link';
-                mapsLink.target = '_blank';
-                const mapsUrl = `https://maps.google.com/?q=${data.location.lat},${data.location.lng}`;
-                const canUseMapLink = !window.SecurityUtils ||
-                    (typeof SecurityUtils.validateMapURL === 'function' ? SecurityUtils.validateMapURL(mapsUrl) : true);
+            const addressElement = document.getElementById('user-address');
+            let hasLocationContent = false;
 
-                if (canUseMapLink) {
-                    const allowedMapOrigins = (window.SecurityUtils && SecurityUtils.ALLOWED_MAP_DOMAINS) ? SecurityUtils.ALLOWED_MAP_DOMAINS : [];
-                    SecurityUtils.setSecureAttribute(mapsLink, 'href', mapsUrl, allowedMapOrigins);
-                    mapsLink.textContent = `📍 ${data.location.lat}, ${data.location.lng}`;
-                    addressElement.appendChild(mapsLink);
-                } else {
-                    addressElement.appendChild(document.createTextNode(`${data.location.lat}, ${data.location.lng}`));
-                }
-                addressItem.style.display = 'flex';
-            } else if (data.address && data.address.trim() !== '') {
-                // Use text address
-                const addressElement = document.getElementById('user-address');
-                // Clear element
+            if (addressElement) {
                 while (addressElement.firstChild) {
                     addressElement.removeChild(addressElement.firstChild);
                 }
-                // Split by lines and add
+            }
+
+            if (addressElement && data.location && data.location.mapId) {
+                const normalizedMapId = normalizeMapId(data.location.mapId);
+                const shareUrl = normalizedMapId ? buildMapShareUrl(normalizedMapId) : '';
+                const mapLink = createMapLinkElement(shareUrl, '📍 Google Maps');
+
+                if (mapLink) {
+                    addressElement.appendChild(mapLink);
+                    hasLocationContent = true;
+                } else if (normalizedMapId) {
+                    addressElement.appendChild(document.createTextNode('📍 Location'));
+                    hasLocationContent = true;
+                } else if (window.SecurityUtils && typeof SecurityUtils.logSecurityEvent === 'function') {
+                    SecurityUtils.logSecurityEvent('renderCard', 'Invalid Google Maps ID detected', { mapId: data.location.mapId });
+                }
+            } else if (addressElement && data.location && data.location.lat && data.location.lng) {
+                const latText = formatCoordinate(data.location.lat, 'lat');
+                const lngText = formatCoordinate(data.location.lng, 'lng');
+
+                if (latText && lngText) {
+                    const mapUrl = buildMapUrlFromCoords(latText, lngText);
+                    const mapLink = createMapLinkElement(mapUrl, `📍 ${latText}, ${lngText}`);
+
+                    if (mapLink) {
+                        addressElement.appendChild(mapLink);
+                    } else {
+                        addressElement.appendChild(document.createTextNode(`${latText}, ${lngText}`));
+                    }
+                    hasLocationContent = true;
+                }
+            } else if (addressElement && data.address && data.address.trim() !== '') {
                 const addressLines = data.address.split('\n');
                 addressLines.forEach((line, index) => {
                     if (index > 0) {
                         addressElement.appendChild(document.createElement('br'));
                     }
-                    const textNode = document.createTextNode(line);
-                    addressElement.appendChild(textNode);
+                    addressElement.appendChild(document.createTextNode(line));
                 });
-                addressItem.style.display = 'flex';
-            } else {
-                addressItem.style.display = 'none';
+                hasLocationContent = true;
+            }
+
+            if (addressItem) {
+                addressItem.style.display = hasLocationContent ? 'flex' : 'none';
             }
             
             greetings = data.greetings;
@@ -850,9 +969,12 @@
                     socialNote = data.socialLinks.socialNote.replace(/\n/g, '\\n');
                 }
 
-                // Handle address or GPS coordinates
+                // Handle address or location (Priority: Google Maps ID > GPS Coords > Text Address)
                 let addressField = '';
-                if (data.location && data.location.lat && data.location.lng) {
+                if (data.location && data.location.mapId) {
+                    // Use URL field to store Google Maps share link
+                    addressField = `URL;TYPE=pref:https://maps.app.goo.gl/${data.location.mapId}`;
+                } else if (data.location && data.location.lat && data.location.lng) {
                     // Use GEO field to store GPS coordinates
                     addressField = `GEO:${data.location.lat};${data.location.lng}`;
                 } else if (data.address) {
@@ -982,9 +1104,28 @@
                 }
             };
 
-            // Parse location object (if exists)
-            if (compactData.loc && typeof compactData.loc === 'object' &&
+            // Parse location object (Priority: Google Maps ID > GPS Coords > Legacy loc object)
+            if (compactData.lm && typeof compactData.lm === 'string' && compactData.lm.trim()) {
+                // Google Maps ID mode
+                result.data.location = {
+                    mapId: compactData.lm.trim()
+                };
+            } else if (compactData.lc && typeof compactData.lc === 'string' && compactData.lc.trim()) {
+                // GPS coordinates string mode "lat,lng"
+                const coords = compactData.lc.split(',');
+                if (coords.length === 2) {
+                    const lat = parseFloat(coords[0].trim());
+                    const lng = parseFloat(coords[1].trim());
+                    if (!Number.isNaN(lat) && !Number.isNaN(lng)) {
+                        result.data.location = {
+                            lat: lat,
+                            lng: lng
+                        };
+                    }
+                }
+            } else if (compactData.loc && typeof compactData.loc === 'object' &&
                 compactData.loc.lat !== undefined && compactData.loc.lng !== undefined) {
+                // Legacy version compatibility
                 result.data.location = {
                     lat: compactData.loc.lat,
                     lng: compactData.loc.lng

@@ -308,13 +308,17 @@
                 <div class="form-section" id="personalAddressSection" style="display: none;">
                     <h2>地址設定</h2>
                     <div class="form-group">
-                        <label>
+                        <label style="display: inline-flex; align-items: center; margin-right: 20px;">
                             <input type="radio" name="addressType" value="text" checked style="margin-right: 8px;">
                             文字地址
                         </label>
-                        <label style="margin-left: 20px;">
+                        <label style="display: inline-flex; align-items: center; margin-right: 20px;">
                             <input type="radio" name="addressType" value="coords" style="margin-right: 8px;">
                             GPS 座標
+                        </label>
+                        <label style="display: inline-flex; align-items: center;">
+                            <input type="radio" name="addressType" value="mapId" style="margin-right: 8px;">
+                            Google Maps 連結
                         </label>
                     </div>
 
@@ -334,18 +338,31 @@
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="latitude">緯度 (Latitude)</label>
-                                <input type="number" id="latitude" step="0.000001" placeholder="例如: 25.033964" style="margin-bottom: 0;">
+                                <input type="number" id="latitude" step="0.0000001" min="-90" max="90" placeholder="例如: 25.0339641" style="margin-bottom: 0;">
                             </div>
                             <div class="form-group">
                                 <label for="longitude">經度 (Longitude)</label>
-                                <input type="number" id="longitude" step="0.000001" placeholder="例如: 121.564468" style="margin-bottom: 0;">
+                                <input type="number" id="longitude" step="0.0000001" min="-180" max="180" placeholder="例如: 121.5644683" style="margin-bottom: 0;">
                             </div>
                         </div>
                         <div style="font-size: 0.8em; color: #6b7280; margin-top: 8px; line-height: 1.4;">
                             💡 <strong>GPS 座標說明：</strong><br>
-                            • 使用十進位格式 (例如: 25.033964, 121.564468)<br>
+                            • 使用十進位格式，支援 7 位小數精度 (~1 公分精度)<br>
                             • 可從 Google Maps 取得座標: 右鍵點擊地點 → 點擊座標即可複製<br>
                             • 座標會自動轉換為 Google Maps 連結，點擊即可導航<br>
+                            • 留空則不顯示地址資訊
+                        </div>
+                    </div>
+
+                    <div class="form-group" id="mapIdAddressGroup" style="display: none;">
+                        <label for="googleMapsUrl">Google Maps 分享連結</label>
+                        <input type="text" id="googleMapsUrl" placeholder="例如: https://maps.app.goo.gl/eKmgu7PqiUfJ2v5D9">
+                        <div style="font-size: 0.8em; color: #6b7280; margin-top: 8px; line-height: 1.4;">
+                            💡 <strong>Google Maps 連結說明：</strong><br>
+                            • 開啟 Google Maps，找到目標地點<br>
+                            • 點擊「分享」→ 複製短網址 (maps.app.goo.gl)<br>
+                            • 系統會自動提取 ID，僅儲存 17 字元<br>
+                            • <strong>容量優勢：</strong>相比 GPS 座標節省 23% 空間<br>
                             • 留空則不顯示地址資訊
                         </div>
                     </div>
@@ -494,6 +511,49 @@
             }
         }
 
+        function normalizeCoordinate(value, type = 'lat') {
+            if (typeof SecurityUtils !== 'undefined' && typeof SecurityUtils.normalizeCoordinate === 'function') {
+                const normalized = SecurityUtils.normalizeCoordinate(value, type, 6);
+                return typeof normalized === 'number' ? normalized : null;
+            }
+
+            if (value === null || value === undefined || value === '') {
+                return null;
+            }
+
+            const numeric = typeof value === 'number' ? value : parseFloat(String(value).trim());
+            if (!Number.isFinite(numeric)) {
+                return null;
+            }
+
+            const limit = type === 'lng' ? 180 : 90;
+            if (Math.abs(numeric) > limit) {
+                return null;
+            }
+
+            return parseFloat(numeric.toFixed(6));
+        }
+
+        function normalizeGoogleMapsId(input) {
+            if (typeof SecurityUtils !== 'undefined' && typeof SecurityUtils.normalizeGoogleMapsId === 'function') {
+                return SecurityUtils.normalizeGoogleMapsId(input);
+            }
+
+            if (typeof input !== 'string') {
+                return '';
+            }
+
+            const trimmed = input.trim();
+            if (!trimmed) {
+                return '';
+            }
+
+            const pattern = /(?:https?:\/\/)?(?:www\.)?maps\.app\.goo\.gl\/([a-zA-Z0-9]+)/i;
+            const match = trimmed.match(pattern);
+            const candidate = match && match[1] ? match[1] : trimmed;
+            return /^[a-zA-Z0-9]{10,25}$/.test(candidate) ? candidate : '';
+        }
+
         function getValidatedAvatarUrl(rawUrl) {
             const trimmed = safeTrim(rawUrl);
             if (!trimmed) {
@@ -591,9 +651,10 @@
         // 地址類型切換邏輯
         document.querySelectorAll('input[name="addressType"]').forEach(radio => {
             radio.addEventListener('change', function() {
-                const isCoords = this.value === 'coords';
-                document.getElementById('textAddressGroup').style.display = isCoords ? 'none' : 'block';
-                document.getElementById('coordsAddressGroup').style.display = isCoords ? 'block' : 'none';
+                const addressType = this.value;
+                document.getElementById('textAddressGroup').style.display = addressType === 'text' ? 'block' : 'none';
+                document.getElementById('coordsAddressGroup').style.display = addressType === 'coords' ? 'block' : 'none';
+                document.getElementById('mapIdAddressGroup').style.display = addressType === 'mapId' ? 'block' : 'none';
             });
         });
 
@@ -665,21 +726,32 @@
             if (cardType === 'personal') {
                 cardData.o = safeTrim(document.getElementById('organization').value);
 
-                // 判斷是文字地址或 GPS 座標
+                // 判斷是文字地址、GPS 座標或 Google Maps ID
                 const addressType = document.querySelector('input[name="addressType"]:checked').value;
                 if (addressType === 'coords') {
                     const lat = safeTrim(document.getElementById('latitude').value);
                     const lng = safeTrim(document.getElementById('longitude').value);
                     if (lat && lng) {
-                        const parsedLat = parseFloat(lat);
-                        const parsedLng = parseFloat(lng);
-                        if (!Number.isNaN(parsedLat) && !Number.isNaN(parsedLng)) {
-                            // 限制座標精度為 6 位小數 (~0.1 公尺精度)
-                            cardData.loc = {
-                                lat: parseFloat(parsedLat.toFixed(6)),
-                                lng: parseFloat(parsedLng.toFixed(6))
-                            };
+                        const sanitizedLat = normalizeCoordinate(lat, 'lat');
+                        const sanitizedLng = normalizeCoordinate(lng, 'lng');
+                        if (sanitizedLat === null || sanitizedLng === null) {
+                            alert('請輸入有效的緯度與經度（緯度範圍 -90~90，經度範圍 -180~180），最多 6 位小數。');
+                            return;
                         }
+                        cardData.lc = `${sanitizedLat},${sanitizedLng}`;
+                    }
+                } else if (addressType === 'mapId') {
+                    const mapsUrl = safeTrim(document.getElementById('googleMapsUrl').value);
+                    if (mapsUrl) {
+                        const normalizedId = normalizeGoogleMapsId(mapsUrl);
+                        if (!normalizedId) {
+                            if (window.SecurityUtils && typeof SecurityUtils.logSecurityEvent === 'function') {
+                                SecurityUtils.logSecurityEvent('generateNFCUrl', 'Invalid Google Maps ID provided', { input: mapsUrl });
+                            }
+                            alert('無效的 Google Maps 連結或 ID。請使用 maps.app.goo.gl 分享連結或有效的分享 ID。');
+                            return;
+                        }
+                        cardData.lm = normalizedId;
                     }
                 } else {
                     cardData.addr = safeTrim(document.getElementById('customAddress').value);

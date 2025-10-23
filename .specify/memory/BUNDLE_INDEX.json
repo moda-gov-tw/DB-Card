@@ -1,17 +1,43 @@
 {
-  "last_checkpoint_id": "coordinate-precision-2025-10-23",
-  "last_design_id": "coordinate-precision@v1",
-  "last_user_hash": "gps-coordinate-precision",
-  "last_lifecycle_epoch": "2025-10-23T13:26:51.452+08:00",
+  "last_checkpoint_id": "google-maps-id-2025-10-23",
+  "last_lifecycle_epoch": "2025-10-23T14:23:13.553+08:00",
+  "last_design_id": "personal-card-location-refactor@v2.1.7",
+  "last_user_hash": "google-maps-id-support",
   "files_digest": {
-    "nfc-generator.html": "coordinate-precision-6-decimal-security-enhanced",
-    "nfc-generator-bilingual.html": "coordinate-precision-6-decimal-security-enhanced",
-    "progress.md": "v2.1.6-coordinate-precision-complete"
+    "assets/bilingual-common.js": {
+      "last_modified": "2025-10-23",
+      "key_functions": ["extractGoogleMapsId", "sanitizeCoordinateValue", "normalizeMapId", "buildShareUrlFromMapId"],
+      "purpose": "Google Maps ID 提取與座標正規化"
+    },
+    "assets/security-utils.js": {
+      "last_modified": "2025-10-23", 
+      "key_functions": ["validateGoogleMapsId", "normalizeCoordinate", "normalizeGoogleMapsId", "createGoogleMapsShareUrl"],
+      "purpose": "安全驗證與地圖 URL 白名單"
+    },
+    "nfc-generator.html": {
+      "last_modified": "2025-10-23",
+      "key_features": ["三選一地址模式", "Google Maps ID 處理", "座標驗證"],
+      "purpose": "單語版生成器 UI 更新"
+    },
+    "nfc-generator-bilingual.html": {
+      "last_modified": "2025-10-23",
+      "key_features": ["雙語三選一模式", "Google Maps ID 處理", "座標驗證"],
+      "purpose": "雙語版生成器 UI 更新"
+    },
+    "index-personal.html": {
+      "last_modified": "2025-10-23",
+      "key_features": ["智慧連結生成", "優先順序處理", "vCard 位置支援"],
+      "purpose": "個人版展示頁智慧連結"
+    },
+    "index-personal-en.html": {
+      "last_modified": "2025-10-23",
+      "key_features": ["智慧連結生成", "優先順序處理", "vCard 位置支援"],
+      "purpose": "英文版展示頁智慧連結"
+    }
   },
-  "promoted_facts": [
-    "GPS 座標精簡策略實作完成",
-    "6 位小數精度限制實施",
-    "反向標籤劫持防護強化",
-    "檔名清理與 URL 構建統一"
-  ]
+  "capacity_optimization": {
+    "google_maps_id": "17 字元",
+    "full_url": "42 字元", 
+    "savings": "59%"
+  }
 }

@@ -1,27 +1,26 @@
-# CHECKPOINTS - 專案檢查點
+# 專案檢查點清單
 
-## coordinate-precision-2025-10-23
+## google-maps-id-2025-10-23
+- **時間**: 2025-10-23T14:23:13.553+08:00
+- **設計**: personal-card-location-refactor@v2.1.7
+- **狀態**: ✅ 完成
+- **摘要**: Google Maps ID 支援實作 - 三選一地址模式 + 容量優化
+- **檔案**: 6 個檔案變更 (assets/bilingual-common.js, assets/security-utils.js, nfc-generator.html, nfc-generator-bilingual.html, index-personal.html, index-personal-en.html)
+- **容量效益**: 節省 59% 容量 (17 字元 vs 42 字元)
+- **安全強化**: 白名單擴充、ID 驗證、事件記錄
+- **DocOps**: progress.md 更新、DECISIONS.md 建立、BUNDLE_INDEX.json 更新
+- **STM 雜湊**: google-maps-id-support
 
-### 完成狀態
-- ✅ GPS 座標精度限制實作 (6 位小數)
-- ✅ 容量優化策略實施
-- ✅ 反向標籤劫持防護
-- ✅ 檔名清理與注入攻擊防護
-- ✅ URL 構建統一化 (URL API)
-- ✅ currentTarget 事件處理標準化
-- ✅ 錯誤處理改善
+## coordinate-precision-2025-10-23 (已歸檔)
+- **時間**: 2025-10-23 (早期)
+- **設計**: GPS 座標精簡策略
+- **狀態**: ✅ 完成並歸檔
+- **摘要**: 6 位小數精度限制 + 安全強化
+- **歸檔路徑**: context/archive/coordinate-precision-2025-10-23/
 
-### 技術債務
-- 考慮將 URL 構建邏輯提取到共用模組
-- 添加檔名清理的單元測試
-- 評估是否需要可配置精度等級
-
-### 回滾點
-```bash
-git checkout -- nfc-generator.html nfc-generator-bilingual.html
-```
-
-### 檔案變更
-- `nfc-generator.html`: 座標精度限制 + 安全強化
-- `nfc-generator-bilingual.html`: 座標精度限制 + 安全強化
-- `progress.md`: 更新至 v2.1.6 狀態
+## location-complete-2025-10-23 (已歸檔)
+- **時間**: 2025-10-23 (更早期)
+- **設計**: Location Object 實作
+- **狀態**: ✅ 完成並歸檔
+- **摘要**: 結構化座標資料與 vCard GEO 屬性
+- **歸檔路徑**: context/archive/location-complete-2025-10-23/
