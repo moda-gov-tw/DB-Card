@@ -1,19 +1,19 @@
-# DECISIONS - 個人版地址座標重構
+# DECISIONS - Location 設計完整實作
 
 ## CLOSE - 2025-10-23
 
 ### 決策摘要
-- **採用 Location Object 模式**: `{coords: {lat, lng}, label: string}` 結構化資料
-- **12 欄位編碼格式**: 擴充 compact 格式支援座標序列化
-- **vCard GEO 屬性**: 使用標準 GEO 格式取代冗長地址文字
-- **向下相容策略**: 保留 address 欄位回退機制
+- **完整 Location 功能鏈路**: 生成器 UI → 資料編碼 → 展示頁面 → 安全驗證
+- **座標輸入 UI**: 單語/雙語生成器支援 GPS 座標與文字地址切換
+- **地圖連結整合**: MAP_BASE_URL 常數與 Google Maps 連結生成
+- **安全強化**: UTF-8 編碼、社群連結防護、URL 驗證集中化
 
 ### 技術決策
-1. **資料層**: parseLocation/serializeLocation 函式處理座標與標籤
-2. **展示層**: renderPersonalCard 優先讀取 location.label
-3. **安全層**: 集中化語言偏好、頭像白名單、DOM 事件監聽器
+1. **生成器層**: 座標輸入 UI、驗證邏輯、Google Maps 指引
+2. **展示層**: location 解析、地圖連結、vCard GEO 屬性
+3. **安全層**: SecurityUtils 集中化、編碼統一、白名單驗證
 
 ### 實作結果
-- 容量優化：座標格式降低 NFC 使用量
-- 結構化資料：完整位置資訊支援
-- 安全強化：SecurityUtils 整合與驗證
+- 完整功能鏈路：用戶輸入座標 → NFC 卡片 → 展示地圖連結
+- 容量優化：座標格式顯著降低 NFC 使用量
+- 安全提升：全面防護注入攻擊與不安全 URL

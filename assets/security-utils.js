@@ -9,8 +9,104 @@
 (function(window) {
     'use strict';
 
+    /**
+     * 允許的地圖服務網域白名單
+     * 用於驗證地圖連結的安全性，防止 Open Redirect 攻擊
+     */
+    const ALLOWED_MAP_DOMAINS = [
+        'https://www.google.com',
+        'https://maps.google.com',
+        'https://maps.app.goo.gl'
+    ];
+
+    function encodeBinaryString(bytes) {
+        let binary = '';
+        const chunkSize = 0x8000;
+        for (let i = 0; i < bytes.length; i += chunkSize) {
+            const chunk = bytes.subarray(i, i + chunkSize);
+            binary += String.fromCharCode.apply(null, chunk);
+        }
+        return binary;
+    }
+
     const SecurityUtils = {
-        
+
+        // 公開地圖網域白名單常數
+        ALLOWED_MAP_DOMAINS: ALLOWED_MAP_DOMAINS,
+
+        /**
+         * Base64 編碼（支援 UTF-8 字元）
+         * @param {string} value - 欲編碼的文字
+         * @returns {string} Base64 字串或空字串（失敗時）
+         */
+        base64Encode: function(value) {
+            try {
+                const encoder = new TextEncoder();
+                const bytes = encoder.encode(value);
+                return btoa(encodeBinaryString(bytes));
+            } catch (error) {
+                this.logSecurityEvent('base64Encode', 'Primary encoder failed', { error: error.message });
+                try {
+                    return btoa(unescape(encodeURIComponent(value)));
+                } catch (fallbackError) {
+                    this.logSecurityEvent('base64Encode', 'Fallback encoder failed', { error: fallbackError.message });
+                    return '';
+                }
+            }
+        },
+
+        /**
+         * Base64 解碼（支援 UTF-8 字元）
+         * @param {string} value - Base64 字串
+         * @returns {string} 解碼後的文字或空字串（失敗時）
+         */
+        base64Decode: function(value) {
+            try {
+                const binary = atob(value);
+                const bytes = new Uint8Array(binary.length);
+                for (let i = 0; i < binary.length; i++) {
+                    bytes[i] = binary.charCodeAt(i);
+                }
+                const decoder = new TextDecoder();
+                return decoder.decode(bytes);
+            } catch (error) {
+                this.logSecurityEvent('base64Decode', 'Primary decoder failed', { error: error.message });
+                try {
+                    return decodeURIComponent(escape(atob(value)));
+                } catch (fallbackError) {
+                    this.logSecurityEvent('base64Decode', 'Fallback decoder failed', { error: fallbackError.message });
+                    return '';
+                }
+            }
+        },
+
+        /**
+         * Base64 URL-safe 編碼
+         * @param {string} value - 欲編碼的文字
+         * @returns {string} URL 可用的 Base64 字串
+         */
+        base64UrlEncode: function(value) {
+            const encoded = this.base64Encode(value);
+            if (!encoded) {
+                return '';
+            }
+            return encoded.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+        },
+
+        /**
+         * Base64 URL-safe 解碼
+         * @param {string} value - URL-safe Base64 字串
+         * @returns {string} 解碼後的文字或空字串
+         */
+        base64UrlDecode: function(value) {
+            if (!value || typeof value !== 'string') {
+                return '';
+            }
+            const padding = '='.repeat((4 - value.length % 4) % 4);
+            const normalized = value.replace(/-/g, '+').replace(/_/g, '/') + padding;
+            return this.base64Decode(normalized);
+        },
+
         /**
          * 輸入驗證 - 清理和驗證用戶輸入
          * @param {string} input - 待驗證的輸入
@@ -122,13 +218,6 @@
          * @returns {boolean} 是否為安全URL
          */
         validateURL: function(url, allowedOrigins = []) {
-            // 調試日誌：記錄所有調用
-            console.log('[DEBUG] validateURL called with:', { 
-                url: url, 
-                allowedOrigins: allowedOrigins.length,
-                origins: allowedOrigins.slice(0, 3) // 只顯示前3個避免日誌過長
-            });
-            
             try {
                 if (typeof url !== 'string' || !url.trim()) {
                     this.logSecurityEvent('validateURL', 'Invalid URL format', { url: typeof url });
@@ -167,15 +256,85 @@
         },
 
         /**
+         * 地圖URL驗證 - 專門驗證地圖服務URL的安全性
+         * @param {string} url - 待驗證的地圖URL
+         * @returns {boolean} 是否為安全的地圖URL
+         */
+        validateMapURL: function(url) {
+            // 調試日誌
+            console.log('[DEBUG] validateMapURL called with:', { url: url });
+
+            try {
+                // 基礎驗證：空值檢查
+                if (typeof url !== 'string' || !url.trim()) {
+                    this.logSecurityEvent('validateMapURL', 'Invalid URL format', { url: typeof url });
+                    return false;
+                }
+
+                const urlObj = new URL(url);
+
+                // 協議必須是 https（地圖服務應使用安全連線）
+                if (urlObj.protocol !== 'https:') {
+                    this.logSecurityEvent('validateMapURL', 'Blocked non-HTTPS protocol', {
+                        protocol: urlObj.protocol,
+                        url: url
+                    });
+                    return false;
+                }
+
+                // 檢查 origin 是否在地圖網域白名單中
+                const isAllowed = ALLOWED_MAP_DOMAINS.includes(urlObj.origin);
+
+                if (!isAllowed) {
+                    this.logSecurityEvent('validateMapURL', 'Map domain not in whitelist', {
+                        origin: urlObj.origin,
+                        allowed: ALLOWED_MAP_DOMAINS
+                    });
+                    return false;
+                }
+
+                // 額外的安全檢查：防止 XSS payload 在 URL 中
+                const suspiciousPatterns = [
+                    /<script/i,
+                    /javascript:/i,
+                    /on\w+\s*=/i,  // onerror=, onclick=, etc.
+                    /<iframe/i
+                ];
+
+                for (const pattern of suspiciousPatterns) {
+                    if (pattern.test(url)) {
+                        this.logSecurityEvent('validateMapURL', 'Suspicious pattern detected in URL', {
+                            url: url,
+                            pattern: pattern.toString()
+                        });
+                        return false;
+                    }
+                }
+
+                return true;
+            } catch (error) {
+                this.logSecurityEvent('validateMapURL', 'URL parsing error', {
+                    error: error.message,
+                    url: url
+                });
+                return false;
+            }
+        },
+
+        /**
          * 安全的URL參數解析
          * @param {string} paramName - 參數名稱
          * @returns {string} 清理後的參數值
          */
-        getSecureURLParam: function(paramName) {
+        getSecureURLParam: function(paramName, options = {}) {
+            const { sanitize = true } = options;
             try {
                 const urlParams = new URLSearchParams(window.location.search);
                 const value = urlParams.get(paramName);
-                return value ? this.sanitizeInput(value) : '';
+                if (!value) {
+                    return '';
+                }
+                return sanitize ? this.sanitizeInput(value) : value;
             } catch (error) {
                 this.logSecurityEvent('getSecureURLParam', 'Parameter parsing error', { 
                     param: paramName, 

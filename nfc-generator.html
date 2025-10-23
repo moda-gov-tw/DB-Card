@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NFC 數位名片生成器</title>
     <script src="assets/qrcode.min.js"></script>
+    <script src="assets/security-utils.js"></script>
     <link rel="stylesheet" href="assets/qrcode-style.css">
     <style>
         * {
@@ -307,6 +308,17 @@
                 <div class="form-section" id="personalAddressSection" style="display: none;">
                     <h2>地址設定</h2>
                     <div class="form-group">
+                        <label>
+                            <input type="radio" name="addressType" value="text" checked style="margin-right: 8px;">
+                            文字地址
+                        </label>
+                        <label style="margin-left: 20px;">
+                            <input type="radio" name="addressType" value="coords" style="margin-right: 8px;">
+                            GPS 座標
+                        </label>
+                    </div>
+
+                    <div class="form-group" id="textAddressGroup">
                         <label for="customAddress">自訂地址 (選填)</label>
                         <textarea id="customAddress" placeholder="請輸入完整地址&#10;例如：臺北市信義區信義路五段7號" style="min-height: 80px;"></textarea>
                         <div style="font-size: 0.8em; color: #6b7280; margin-top: 8px; line-height: 1.4;">
@@ -315,6 +327,26 @@
                             • <span id="addressCharCount" style="color: #059669;">0</span> / <span style="color: #d97706;">50</span> 字（建議不超過 50 字）<br>
                             • 避免過於詳細的個人住址以保護隱私<br>
                             ⚠️ 超過建議字數可能影響 NFC 容量
+                        </div>
+                    </div>
+
+                    <div class="form-group" id="coordsAddressGroup" style="display: none;">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="latitude">緯度 (Latitude)</label>
+                                <input type="number" id="latitude" step="0.000001" placeholder="例如: 25.033964" style="margin-bottom: 0;">
+                            </div>
+                            <div class="form-group">
+                                <label for="longitude">經度 (Longitude)</label>
+                                <input type="number" id="longitude" step="0.000001" placeholder="例如: 121.564468" style="margin-bottom: 0;">
+                            </div>
+                        </div>
+                        <div style="font-size: 0.8em; color: #6b7280; margin-top: 8px; line-height: 1.4;">
+                            💡 <strong>GPS 座標說明：</strong><br>
+                            • 使用十進位格式 (例如: 25.033964, 121.564468)<br>
+                            • 可從 Google Maps 取得座標: 右鍵點擊地點 → 點擊座標即可複製<br>
+                            • 座標會自動轉換為 Google Maps 連結，點擊即可導航<br>
+                            • 留空則不顯示地址資訊
                         </div>
                     </div>
                 </div>
@@ -366,7 +398,7 @@
                 <div style="margin-top: 25px;">
                     <h3>QR 碼</h3>
                     <div class="qr-container" id="qrcode" style="margin-bottom: 15px;">QR 碼載入中...</div>
-                    <button class="btn" onclick="downloadQRCode()" style="background: #3b82f6; margin-bottom: 20px;">
+                    <button class="btn" onclick="downloadQRCode(event)" style="background: #3b82f6; margin-bottom: 20px;">
                         💾 下載 QR 碼圖片
                     </button>
                 </div>
@@ -391,6 +423,107 @@
         const output = document.getElementById('output');
         let generatedUrl = '';
 
+        const SAFE_AVATAR_URL_PREFIX = /^data:image\/(png|jpe?g|gif|webp);base64,/i;
+
+        function safeTrim(value) {
+            return typeof value === 'string' ? value.trim() : '';
+        }
+
+        function convertGoogleDriveUrl(url) {
+            if (!url) return url;
+            try {
+                const match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+                if (match) {
+                    return `https://drive.google.com/uc?export=view&id=${match[1]}`;
+                }
+                if (url.includes('drive.google.com/uc?')) {
+                    return url;
+                }
+            } catch (error) {
+                if (window.SecurityUtils && typeof SecurityUtils.logSecurityEvent === 'function') {
+                    SecurityUtils.logSecurityEvent('convertGoogleDriveUrl', 'Conversion failed', { error: error.message });
+                }
+            }
+            return url;
+        }
+
+        function isSafeUrl(url) {
+            if (!url) return false;
+            if (SAFE_AVATAR_URL_PREFIX.test(url)) {
+                return true;
+            }
+            if (window.SecurityUtils && typeof SecurityUtils.validateURL === 'function') {
+                return SecurityUtils.validateURL(url);
+            }
+            try {
+                const parsed = new URL(url);
+                return ['http:', 'https:'].includes(parsed.protocol);
+            } catch (_) {
+                return false;
+            }
+        }
+
+        function getValidatedAvatarUrl(rawUrl) {
+            const trimmed = safeTrim(rawUrl);
+            if (!trimmed) {
+                return '';
+            }
+            if (SAFE_AVATAR_URL_PREFIX.test(trimmed)) {
+                return trimmed;
+            }
+            const converted = convertGoogleDriveUrl(trimmed);
+            if (isSafeUrl(converted)) {
+                return converted;
+            }
+            if (window.SecurityUtils && typeof SecurityUtils.logSecurityEvent === 'function') {
+                SecurityUtils.logSecurityEvent('generateNFCUrl', 'Blocked unsafe avatar URL', { url: converted });
+            }
+            return '';
+        }
+
+        function encodeCardPayload(payload) {
+            const jsonString = JSON.stringify(payload);
+            if (window.SecurityUtils && typeof SecurityUtils.base64Encode === 'function') {
+                const encoded = SecurityUtils.base64Encode(jsonString);
+                if (encoded) {
+                    return encoded;
+                }
+            }
+            try {
+                return btoa(unescape(encodeURIComponent(jsonString)));
+            } catch (error) {
+                if (window.SecurityUtils && typeof SecurityUtils.logSecurityEvent === 'function') {
+                    SecurityUtils.logSecurityEvent('generateNFCUrl', 'Failed to encode payload', { error: error.message });
+                }
+                return '';
+            }
+        }
+
+        function normalizeGreetingLines(rawValue) {
+            return rawValue
+                .split('\n')
+                .map(line => safeTrim(line))
+                .filter(line => line.length > 0);
+        }
+
+        function legacyCopyToClipboard(text) {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.setAttribute('readonly', '');
+            textArea.style.position = 'fixed';
+            textArea.style.opacity = '0';
+            document.body.appendChild(textArea);
+            textArea.select();
+            let success = false;
+            try {
+                success = document.execCommand('copy');
+            } catch (_) {
+                success = false;
+            }
+            document.body.removeChild(textArea);
+            return success;
+        }
+
         // 預填範例資料
         document.getElementById('name').value = '吳勝繙';
         document.getElementById('title').value = '科長';
@@ -409,19 +542,28 @@
         // 版面類型切換邏輯
         document.getElementById('cardType').addEventListener('change', function() {
             const isPersonal = this.value === 'personal';
-            
+
             // 顯示/隱藏個人版面專用區塊（移除組織資訊）
             document.getElementById('personalGreetingGroup').style.display = isPersonal ? 'block' : 'none';
             document.getElementById('officialGreetingGroup').style.display = isPersonal ? 'none' : 'block';
             document.getElementById('personalAddressSection').style.display = isPersonal ? 'block' : 'none';
             document.getElementById('officialAddressSection').style.display = isPersonal ? 'none' : 'block';
-            
+
             // 切換預設問候語
             if (isPersonal) {
                 document.getElementById('personalGreeting').value = '歡迎認識我！\n很高興與您交流 👋';
                 updateGreetingCharCount();
                 updateAddressCharCount();
             }
+        });
+
+        // 地址類型切換邏輯
+        document.querySelectorAll('input[name="addressType"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                const isCoords = this.value === 'coords';
+                document.getElementById('textAddressGroup').style.display = isCoords ? 'none' : 'block';
+                document.getElementById('coordsAddressGroup').style.display = isCoords ? 'block' : 'none';
+            });
         });
 
         // 問候語字數統計
@@ -468,58 +610,56 @@
             // 問候語處理
             let greetingsArray;
             if (cardType === 'personal') {
-                const personalGreeting = document.getElementById('personalGreeting').value;
-                greetingsArray = personalGreeting.split('\n').filter(line => line.trim() !== '');
+                greetingsArray = normalizeGreetingLines(document.getElementById('personalGreeting').value);
             } else {
-                const greetingsText = document.getElementById('greetings').value;
-                greetingsArray = greetingsText.split('\n').filter(line => line.trim() !== '');
+                greetingsArray = normalizeGreetingLines(document.getElementById('greetings').value);
             }
-            
-            // 根據版面類型建立資料結構
-            // 轉換 Google Drive 分享連結為直接圖片連結
-            function convertGoogleDriveUrl(url) {
-                if (!url) return url;
-                
-                // 匹配 Google Drive 分享連結格式
-                const match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
-                if (match) {
-                    const fileId = match[1];
-                    return `https://drive.google.com/uc?export=view&id=${fileId}`;
-                }
-                
-                // 如果已經是直接連結格式，返回原連結
-                if (url.includes('drive.google.com/uc?')) {
-                    return url;
-                }
-                
-                return url;
+            if (greetingsArray.length === 0) {
+                greetingsArray = ['歡迎認識我！'];
             }
-
-            // 處理大頭貼 URL，支援 Google Drive 轉換
-            let avatarUrl = document.getElementById('avatar').value;
-            avatarUrl = convertGoogleDriveUrl(avatarUrl);
 
             const cardData = {
-                n: document.getElementById('name').value,
-                t: document.getElementById('title').value,
-                d: document.getElementById('department').value,
-                e: document.getElementById('email').value,
-                p: document.getElementById('phone').value,
-                m: document.getElementById('mobile').value,
-                a: avatarUrl,
+                n: safeTrim(document.getElementById('name').value),
+                t: safeTrim(document.getElementById('title').value),
+                d: safeTrim(document.getElementById('department').value),
+                e: safeTrim(document.getElementById('email').value),
+                p: safeTrim(document.getElementById('phone').value),
+                m: safeTrim(document.getElementById('mobile').value),
+                a: getValidatedAvatarUrl(document.getElementById('avatar').value),
                 g: greetingsArray,
-                s: document.getElementById('socialNote').value
+                s: safeTrim(document.getElementById('socialNote').value)
             };
             
             // 個人版面新增組織和地址欄位
             if (cardType === 'personal') {
-                cardData.o = document.getElementById('organization').value || '';
-                cardData.addr = document.getElementById('customAddress').value || '';
+                cardData.o = safeTrim(document.getElementById('organization').value);
+
+                // 判斷是文字地址或 GPS 座標
+                const addressType = document.querySelector('input[name="addressType"]:checked').value;
+                if (addressType === 'coords') {
+                    const lat = safeTrim(document.getElementById('latitude').value);
+                    const lng = safeTrim(document.getElementById('longitude').value);
+                    if (lat && lng) {
+                        const parsedLat = parseFloat(lat);
+                        const parsedLng = parseFloat(lng);
+                        if (!Number.isNaN(parsedLat) && !Number.isNaN(parsedLng)) {
+                            cardData.loc = {
+                                lat: parsedLat,
+                                lng: parsedLng
+                            };
+                        }
+                    }
+                } else {
+                    cardData.addr = safeTrim(document.getElementById('customAddress').value);
+                }
             }
 
             // 將 JSON 資料進行 Base64 編碼（支援 UTF-8）
-            const jsonString = JSON.stringify(cardData);
-            const encodedData = btoa(unescape(encodeURIComponent(jsonString)));
+            const encodedData = encodeCardPayload(cardData);
+            if (!encodedData) {
+                alert('資料編碼失敗，請檢查輸入內容是否包含不支援的字元。');
+                return;
+            }
 
             // 根據版面類型和語言選擇目標頁面
             const languageSelect = document.getElementById('languageSelect').value;
@@ -602,17 +742,19 @@
         }
         
         // 下載 QR 碼函數
-        function downloadQRCode() {
+        function downloadQRCode(evt) {
             if (!generatedUrl) {
                 alert('請先生成 NFC 連結');
                 return;
             }
             
             // 顯示下載中狀態
-            const downloadBtn = event.target;
-            const originalText = downloadBtn.textContent;
-            downloadBtn.textContent = '⏳ 下載中...';
-            downloadBtn.disabled = true;
+            const downloadBtn = evt && evt.target ? evt.target : null;
+            const originalText = downloadBtn ? downloadBtn.textContent : '';
+            if (downloadBtn) {
+                downloadBtn.textContent = '⏳ 下載中...';
+                downloadBtn.disabled = true;
+            }
             
             try {
                 // 取得 QR 碼圖片
@@ -661,13 +803,15 @@
                         URL.revokeObjectURL(url);
                         
                         // 恢復按鈕狀態
-                        setTimeout(() => {
-                            downloadBtn.textContent = '✅ 下載完成';
+                        if (downloadBtn) {
                             setTimeout(() => {
-                                downloadBtn.textContent = originalText;
-                                downloadBtn.disabled = false;
-                            }, 1500);
-                        }, 500);
+                                downloadBtn.textContent = '✅ 下載完成';
+                                setTimeout(() => {
+                                    downloadBtn.textContent = originalText;
+                                    downloadBtn.disabled = false;
+                                }, 1500);
+                            }, 500);
+                        }
                     });
                 };
                 
@@ -679,27 +823,59 @@
                 alert('QR 碼下載失敗，請重新生成後再試');
                 
                 // 恢復按鈕狀態
-                downloadBtn.textContent = originalText;
-                downloadBtn.disabled = false;
+                if (downloadBtn) {
+                    downloadBtn.textContent = originalText;
+                    downloadBtn.disabled = false;
+                }
             }
         }
 
 
         function copyToClipboard() {
-            navigator.clipboard.writeText(generatedUrl).then(function() {
-                const btn = document.querySelector('.copy-btn');
-                const originalText = btn.textContent;
+            if (!generatedUrl) {
+                alert('請先生成 NFC 連結');
+                return;
+            }
+
+            const btn = document.querySelector('.copy-btn');
+            const originalText = btn ? btn.textContent : '';
+
+            const showSuccess = () => {
+                if (!btn) {
+                    return;
+                }
                 btn.textContent = '✅ 已複製！';
                 btn.style.background = '#059669';
-                
                 setTimeout(function() {
                     btn.textContent = originalText;
                     btn.style.background = '';
                 }, 2000);
-            }).catch(function(err) {
-                console.error('複製失敗:', err);
+            };
+
+            const showFailure = (err) => {
+                if (err && window.SecurityUtils && typeof SecurityUtils.logSecurityEvent === 'function') {
+                    SecurityUtils.logSecurityEvent('copyToClipboard', 'Clipboard write failed', { error: err.message });
+                }
                 alert('複製失敗，請手動複製連結');
-            });
+            };
+
+            if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+                navigator.clipboard.writeText(generatedUrl)
+                    .then(showSuccess)
+                    .catch((err) => {
+                        if (legacyCopyToClipboard(generatedUrl)) {
+                            showSuccess();
+                        } else {
+                            showFailure(err);
+                        }
+                    });
+            } else {
+                if (legacyCopyToClipboard(generatedUrl)) {
+                    showSuccess();
+                } else {
+                    showFailure(new Error('Clipboard API not available'));
+                }
+            }
         }
 
         function previewCard() {

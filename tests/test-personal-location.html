@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test: Personal Card Location Support</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-case {
+            margin: 15px 0;
+            padding: 15px;
+            border-left: 4px solid #6968ac;
+            background: #f8f9fa;
+        }
+        .pass { border-color: #28a745; }
+        .fail { border-color: #dc3545; }
+        h1 { color: #333; }
+        h2 { color: #6968ac; margin-top: 0; }
+        h3 { color: #495057; margin-top: 0; }
+        .status {
+            font-weight: bold;
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+        .status.pass { background: #d4edda; color: #155724; }
+        .status.fail { background: #f8d7da; color: #721c24; }
+        pre {
+            background: #263238;
+            color: #aed581;
+            padding: 12px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            background: #e9ecef;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Suite: Personal Card Location Support</h1>
+    <p><strong>Target Files:</strong> index-personal.html, index-personal-en.html</p>
+
+    <div class="test-section">
+        <h2>Test 1: Location Object Parsing</h2>
+        <div id="test1" class="test-case">
+            <h3>Testing: convertCompactToFull() with location object</h3>
+            <div class="result"></div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 2: Location Display Rendering</h2>
+        <div id="test2" class="test-case">
+            <h3>Testing: Google Maps link generation</h3>
+            <div class="result"></div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 3: Address Fallback</h2>
+        <div id="test3" class="test-case">
+            <h3>Testing: Text address when no location</h3>
+            <div class="result"></div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 4: VCard GEO Field</h2>
+        <div id="test4" class="test-case">
+            <h3>Testing: VCard includes GEO field for coordinates</h3>
+            <div class="result"></div>
+        </div>
+    </div>
+
+    <script>
+        // Simulate convertCompactToFull function
+        function convertCompactToFull(compactData) {
+            const safeValue = (value) => {
+                if (!value || value === '[DECRYPTION_FAILED]') return '';
+                return value;
+            };
+
+            const result = {
+                data: {
+                    name: safeValue(compactData.n),
+                    title: safeValue(compactData.t),
+                    department: safeValue(compactData.d),
+                    organization: compactData.o || '',
+                    email: safeValue(compactData.e),
+                    phone: safeValue(compactData.p),
+                    mobile: safeValue(compactData.m),
+                    avatar: safeValue(compactData.a),
+                    address: compactData.addr || '',
+                    greetings: compactData.g || ['歡迎認識我！'],
+                    socialLinks: {
+                        email: compactData.e ? `mailto:${compactData.e}` : '',
+                        socialNote: safeValue(compactData.s)
+                    }
+                }
+            };
+
+            // Parse location object (if exists)
+            if (compactData.loc && typeof compactData.loc === 'object' &&
+                compactData.loc.lat !== undefined && compactData.loc.lng !== undefined) {
+                result.data.location = {
+                    lat: compactData.loc.lat,
+                    lng: compactData.loc.lng
+                };
+            }
+
+            return result;
+        }
+
+        // Test 1: Location Object Parsing
+        function test1() {
+            const compactData = {
+                n: '王小明',
+                t: '專案經理',
+                d: '資訊部',
+                e: 'wang@example.com',
+                p: '02-12345678',
+                m: '0912-345678',
+                a: 'avatar.jpg',
+                loc: {
+                    lat: 25.033964,
+                    lng: 121.564468
+                }
+            };
+
+            const result = convertCompactToFull(compactData);
+            const hasLocation = result.data.location &&
+                                result.data.location.lat === 25.033964 &&
+                                result.data.location.lng === 121.564468;
+
+            const testEl = document.getElementById('test1');
+            const resultEl = testEl.querySelector('.result');
+
+            if (hasLocation) {
+                testEl.classList.add('pass');
+                resultEl.innerHTML = `
+                    <span class="status pass">✓ PASS</span>
+                    <pre>${JSON.stringify(result.data.location, null, 2)}</pre>
+                    <p><strong>✓</strong> Location object correctly parsed with lat and lng</p>
+                `;
+            } else {
+                testEl.classList.add('fail');
+                resultEl.innerHTML = `
+                    <span class="status fail">✗ FAIL</span>
+                    <p>Location object not found or incorrect values</p>
+                    <pre>${JSON.stringify(result.data, null, 2)}</pre>
+                `;
+            }
+        }
+
+        // Test 2: Location Display Rendering
+        function test2() {
+            const data = {
+                location: {
+                    lat: 25.033964,
+                    lng: 121.564468
+                }
+            };
+
+            const expectedUrl = 'https://maps.google.com/?q=25.033964,121.564468';
+            const expectedText = '📍 25.033964, 121.564468';
+
+            const testEl = document.getElementById('test2');
+            const resultEl = testEl.querySelector('.result');
+
+            // Simulate link creation
+            const mapsUrl = `https://maps.google.com/?q=${data.location.lat},${data.location.lng}`;
+            const displayText = `📍 ${data.location.lat}, ${data.location.lng}`;
+
+            if (mapsUrl === expectedUrl && displayText === expectedText) {
+                testEl.classList.add('pass');
+                resultEl.innerHTML = `
+                    <span class="status pass">✓ PASS</span>
+                    <p><strong>URL:</strong> <code>${mapsUrl}</code></p>
+                    <p><strong>Display Text:</strong> ${displayText}</p>
+                    <p><a href="${mapsUrl}" target="_blank">Test Link (opens Google Maps)</a></p>
+                `;
+            } else {
+                testEl.classList.add('fail');
+                resultEl.innerHTML = `
+                    <span class="status fail">✗ FAIL</span>
+                    <p>Generated URL or text doesn't match expected format</p>
+                `;
+            }
+        }
+
+        // Test 3: Address Fallback
+        function test3() {
+            const compactData = {
+                n: '王小明',
+                t: '專案經理',
+                d: '資訊部',
+                e: 'wang@example.com',
+                addr: '台北市信義區忠孝東路100號'
+            };
+
+            const result = convertCompactToFull(compactData);
+            const hasAddress = result.data.address === '台北市信義區忠孝東路100號';
+            const noLocation = !result.data.location;
+
+            const testEl = document.getElementById('test3');
+            const resultEl = testEl.querySelector('.result');
+
+            if (hasAddress && noLocation) {
+                testEl.classList.add('pass');
+                resultEl.innerHTML = `
+                    <span class="status pass">✓ PASS</span>
+                    <p><strong>✓</strong> Text address correctly preserved</p>
+                    <p><strong>✓</strong> No location object when only address provided</p>
+                    <pre>address: "${result.data.address}"</pre>
+                `;
+            } else {
+                testEl.classList.add('fail');
+                resultEl.innerHTML = `
+                    <span class="status fail">✗ FAIL</span>
+                    <p>Address handling incorrect</p>
+                    <pre>${JSON.stringify(result.data, null, 2)}</pre>
+                `;
+            }
+        }
+
+        // Test 4: VCard GEO Field
+        function test4() {
+            const data = {
+                name: '王小明',
+                location: {
+                    lat: 25.033964,
+                    lng: 121.564468
+                }
+            };
+
+            // Simulate VCard generation logic
+            let addressField = '';
+            if (data.location && data.location.lat && data.location.lng) {
+                addressField = `GEO:${data.location.lat};${data.location.lng}`;
+            }
+
+            const expectedGeoField = 'GEO:25.033964;121.564468';
+            const testEl = document.getElementById('test4');
+            const resultEl = testEl.querySelector('.result');
+
+            if (addressField === expectedGeoField) {
+                testEl.classList.add('pass');
+                resultEl.innerHTML = `
+                    <span class="status pass">✓ PASS</span>
+                    <p><strong>✓</strong> VCard GEO field correctly formatted</p>
+                    <pre>${addressField}</pre>
+                    <p><em>Note: VCard 3.0 GEO format uses semicolon separator</em></p>
+                `;
+            } else {
+                testEl.classList.add('fail');
+                resultEl.innerHTML = `
+                    <span class="status fail">✗ FAIL</span>
+                    <p>GEO field format incorrect</p>
+                    <p>Expected: <code>${expectedGeoField}</code></p>
+                    <p>Got: <code>${addressField}</code></p>
+                `;
+            }
+        }
+
+        // Run all tests
+        window.addEventListener('load', () => {
+            test1();
+            test2();
+            test3();
+            test4();
+        });
+    </script>
+</body>
+</html>

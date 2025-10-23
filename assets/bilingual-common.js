@@ -29,7 +29,53 @@ const logSecurityEvent = (functionName, message, details = {}) => {
     }
 };
 
+const base64Helper = (() => {
+    const hasSecurityUtils = typeof SecurityUtils !== 'undefined' &&
+        typeof SecurityUtils.base64UrlEncode === 'function' &&
+        typeof SecurityUtils.base64UrlDecode === 'function';
+
+    const fallbackEncode = (value) => {
+        try {
+            return btoa(unescape(encodeURIComponent(value)))
+                .replace(/\+/g, '-')
+                .replace(/\//g, '_')
+                .replace(/=+$/g, '');
+        } catch (error) {
+            logSecurityEvent('base64FallbackEncode', 'Encoding failed', { error: error.message });
+            return '';
+        }
+    };
+
+    const fallbackDecode = (value) => {
+        try {
+            const padding = '='.repeat((4 - value.length % 4) % 4);
+            const normalized = value.replace(/-/g, '+').replace(/_/g, '/') + padding;
+            return decodeURIComponent(escape(atob(normalized)));
+        } catch (error) {
+            logSecurityEvent('base64FallbackDecode', 'Decoding failed', { error: error.message });
+            return null;
+        }
+    };
+
+    return {
+        encode(value) {
+            if (hasSecurityUtils) {
+                return SecurityUtils.base64UrlEncode(value);
+            }
+            return fallbackEncode(value);
+        },
+        decode(value) {
+            if (hasSecurityUtils) {
+                return SecurityUtils.base64UrlDecode(value);
+            }
+            return fallbackDecode(value);
+        }
+    };
+})();
+
 const PREFERRED_LANGUAGE_KEY = 'preferredLanguage';
+
+const MAP_BASE_URL = 'https://www.google.com/maps';
 
 const ALLOWED_AVATAR_ORIGINS = [
     'https://i.imgur.com',
@@ -137,7 +183,7 @@ function detectBrowserLanguage() {
     // 否則偵測瀏覽器語言
     const userLang = (navigator.language || navigator.userLanguage || navigator.browserLanguage || '').toLowerCase();
     const detectedLang = /^en(-[a-z]{2})?$/.test(userLang) ? 'en' : 'zh';
-    console.log(`Browser language: ${userLang} → Detected: ${detectedLang}`);
+    logSecurityEvent('detectBrowserLanguage', 'Language detected', { browserLanguage: userLang, resolved: detectedLang });
     
     return applyDocumentLanguage(detectedLang);
 }
@@ -183,10 +229,7 @@ function encodeCompact(data) {
         serializeLocation(data.location)
     ].join('|');
 
-    return btoa(encodeURIComponent(compact))
-        .replace(/\+/g, '-')
-        .replace(/\//g, '_')
-        .replace(/=/g, '');
+    return base64Helper.encode(compact);
 }
 
 /**
@@ -194,10 +237,10 @@ function encodeCompact(data) {
  */
 function decodeCompact(encoded) {
     try {
-        const padding = '='.repeat((4 - encoded.length % 4) % 4);
-        const compact = decodeURIComponent(atob(
-            encoded.replace(/-/g, '+').replace(/_/g, '/') + padding
-        ));
+        const compact = base64Helper.decode(encoded);
+        if (compact === null) {
+            throw new Error('Base64 decode returned null');
+        }
 
         const parts = compact.split('|');
 
@@ -281,7 +324,7 @@ function decodeCompact(encoded) {
 
                 return Object.keys(location).length > 0 ? location : null;
             } catch (error) {
-                console.warn('Location parsing error:', error);
+                logSecurityEvent('parseLocation', 'Location parsing error', { error: error.message });
                 return null;
             }
         };
@@ -302,7 +345,7 @@ function decodeCompact(encoded) {
             location: parseLocation(parts[11])
         };
     } catch (error) {
-        console.error('解碼失敗:', error);
+        logSecurityEvent('decodeCompact', 'Decoding failed', { error: error.message });
         return null;
     }
 }
@@ -864,6 +907,29 @@ function createSocialElement(platform, url, buttonText, brandColor, displayUrl =
     container.appendChild(label);
     container.appendChild(link);
     return container;
+}
+
+/**
+ * 生成地圖連結
+ * @param {Object} location - Location object with coords {lat, lng} and/or label
+ * @returns {string} Google Maps URL
+ */
+function generateMapLink(location) {
+    if (!location) return '';
+
+    const { coords, label } = location;
+
+    // 優先使用座標，否則使用標籤搜尋
+    if (coords && typeof coords.lat === 'number' && typeof coords.lng === 'number') {
+        // 使用座標: https://www.google.com/maps?q=25.0330,121.5654
+        return `${MAP_BASE_URL}?q=${coords.lat},${coords.lng}`;
+    } else if (label && label.trim()) {
+        // 使用標籤搜尋: https://www.google.com/maps/search/?api=1&query=台北101
+        const encodedLabel = encodeURIComponent(label.trim());
+        return `${MAP_BASE_URL}/search/?api=1&query=${encodedLabel}`;
+    }
+
+    return '';
 }
 
 /**

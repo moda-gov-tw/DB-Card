@@ -1,7 +1,7 @@
 # NFC 數位名片系統 - 專案憲章
 
 ## 專案特性
-- **類型**: 純前端 NFC 數位名片系統 v2.1.4
+- **類型**: 純前端 NFC 數位名片系統 v2.1.5
 - **架構**: 隱私優先設計，無後端追蹤
 - **安全**: DOMPurify 3.2.4 + SecurityUtils 多層防護
 - **容量**: NFC 492 bytes 限制優化，Location Object 座標格式
@@ -18,3 +18,4 @@
 - 高齡友善設計
 - 跨平台相容（Android/iOS）
 - Location Object: coords{lat,lng} + label 結構化資料
+- 完整功能鏈路: 生成器 UI → 編碼 → 展示 → 安全驗證

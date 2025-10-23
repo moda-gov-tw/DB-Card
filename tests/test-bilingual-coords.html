@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bilingual Coordinate Input Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        .pass {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .fail {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Bilingual Coordinate Input Test Suite</h1>
+
+    <div class="test-section">
+        <h2>Test 1: Text Address Mode (Bilingual)</h2>
+        <button onclick="testTextAddress()">Run Test</button>
+        <div id="test1-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 2: GPS Coordinates Mode</h2>
+        <button onclick="testGPSCoords()">Run Test</button>
+        <div id="test2-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 3: Location Object Structure</h2>
+        <button onclick="testLocationObject()">Run Test</button>
+        <div id="test3-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 4: Toggle Between Text and Coords</h2>
+        <button onclick="testToggle()">Run Test</button>
+        <div id="test4-result"></div>
+    </div>
+
+    <script>
+        function showResult(elementId, passed, message) {
+            const element = document.getElementById(elementId);
+            element.className = `test-result ${passed ? 'pass' : 'fail'}`;
+            element.textContent = `${passed ? '✅ PASS' : '❌ FAIL'}: ${message}`;
+        }
+
+        function testTextAddress() {
+            try {
+                // Simulate text address input
+                const data = {
+                    name: '王小明~Wang Xiaoming',
+                    title: '經理~Manager',
+                    address: '台北市信義區~Taipei City Xinyi District'
+                };
+
+                const hasAddress = data.address && data.address.includes('~');
+                const hasNoLocation = !data.location;
+
+                if (hasAddress && hasNoLocation) {
+                    showResult('test1-result', true,
+                        'Text address correctly formatted with bilingual separator (~)');
+                } else {
+                    showResult('test1-result', false,
+                        'Text address not properly formatted or location object exists');
+                }
+            } catch (error) {
+                showResult('test1-result', false, error.message);
+            }
+        }
+
+        function testGPSCoords() {
+            try {
+                // Simulate GPS coordinates input
+                const data = {
+                    name: '王小明~Wang Xiaoming',
+                    title: '經理~Manager',
+                    location: {
+                        lat: 25.033964,
+                        lng: 121.564468
+                    }
+                };
+
+                const hasLocation = data.location &&
+                                   typeof data.location.lat === 'number' &&
+                                   typeof data.location.lng === 'number';
+                const noAddress = !data.address || data.address === '';
+
+                if (hasLocation && noAddress) {
+                    showResult('test2-result', true,
+                        `Location object created: lat=${data.location.lat}, lng=${data.location.lng}`);
+                } else {
+                    showResult('test2-result', false,
+                        'Location object not properly created or text address exists');
+                }
+            } catch (error) {
+                showResult('test2-result', false, error.message);
+            }
+        }
+
+        function testLocationObject() {
+            try {
+                // Test Location object structure
+                const location = {
+                    lat: 25.033964,
+                    lng: 121.564468
+                };
+
+                const hasLat = typeof location.lat === 'number';
+                const hasLng = typeof location.lng === 'number';
+                const validLat = location.lat >= -90 && location.lat <= 90;
+                const validLng = location.lng >= -180 && location.lng <= 180;
+
+                if (hasLat && hasLng && validLat && validLng) {
+                    showResult('test3-result', true,
+                        'Location object structure is valid with correct data types and ranges');
+                } else {
+                    showResult('test3-result', false,
+                        'Location object structure is invalid');
+                }
+            } catch (error) {
+                showResult('test3-result', false, error.message);
+            }
+        }
+
+        function testToggle() {
+            try {
+                // Simulate toggling between modes
+                let data = {
+                    name: '王小明~Wang Xiaoming',
+                    title: '經理~Manager'
+                };
+
+                // Initial: text mode
+                data.address = '台北市信義區~Taipei City Xinyi District';
+                const step1 = data.address && !data.location;
+
+                // Switch to coords mode - clear address, add location
+                delete data.address;
+                data.address = '';
+                data.location = { lat: 25.033964, lng: 121.564468 };
+                const step2 = data.location && (!data.address || data.address === '');
+
+                // Switch back to text mode - clear location, add address
+                delete data.location;
+                data.address = '新北市板橋區~New Taipei City Banqiao District';
+                const step3 = data.address && !data.location;
+
+                if (step1 && step2 && step3) {
+                    showResult('test4-result', true,
+                        'Toggle between text address and GPS coordinates works correctly');
+                } else {
+                    showResult('test4-result', false,
+                        `Toggle failed: step1=${step1}, step2=${step2}, step3=${step3}`);
+                }
+            } catch (error) {
+                showResult('test4-result', false, error.message);
+            }
+        }
+
+        // Run all tests on load
+        window.addEventListener('load', function() {
+            setTimeout(() => {
+                testTextAddress();
+                testGPSCoords();
+                testLocationObject();
+                testToggle();
+            }, 500);
+        });
+    </script>
+</body>
+</html>

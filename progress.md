@@ -1,7 +1,7 @@
 ## 當前狀態
-✅ **專案**: NFC 數位名片系統 v2.1.4
-✅ **最新完成**: 個人版地址座標重構 - Location Object 實作
-✅ **歸檔**: context/archive/location-refactor-2025-10-23/
+✅ **專案**: NFC 數位名片系統 v2.1.5
+✅ **最新完成**: Location 設計完整實作 - 生成器 UI + 展示頁 + 安全強化
+✅ **歸檔**: context/archive/location-complete-2025-10-23/
 
 ## 已完成任務 - 個人版地址座標重構 (2025-10-23)
 ✅ **Location Object 實作**: 新增 location{coords, label} 結構化資料

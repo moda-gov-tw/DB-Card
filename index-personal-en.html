@@ -552,6 +552,105 @@
         let greetings = [];
         const greetingElement = document.getElementById('greeting');
 
+        function sanitizeText(value) {
+            if (typeof value !== 'string') {
+                return '';
+            }
+            if (window.SecurityUtils && typeof SecurityUtils.sanitizeInput === 'function') {
+                return SecurityUtils.sanitizeInput(value, 'text');
+            }
+            return value
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#x27;')
+                .replace(/\//g, '&#x2F;');
+        }
+
+        function decodeCardPayload(value, options = {}) {
+            const { tryUrlDecode = false } = options;
+            if (!value || typeof value !== 'string') {
+                return '';
+            }
+
+            const attempts = [value];
+            if (tryUrlDecode) {
+                try {
+                    const decoded = decodeURIComponent(value);
+                    if (!attempts.includes(decoded)) {
+                        attempts.push(decoded);
+                    }
+                } catch (_) {
+                    // ignore malformed URI sequences
+                }
+            }
+
+            for (const candidate of attempts) {
+                if (!candidate) {
+                    continue;
+                }
+
+                let decoded = '';
+                if (window.SecurityUtils && typeof SecurityUtils.base64Decode === 'function') {
+                    decoded = SecurityUtils.base64Decode(candidate);
+                    if (decoded) {
+                        return decoded;
+                    }
+                }
+
+                try {
+                    const binary = atob(candidate);
+                    if (window.TextDecoder) {
+                        const bytes = new Uint8Array(binary.length);
+                        for (let i = 0; i < binary.length; i++) {
+                            bytes[i] = binary.charCodeAt(i);
+                        }
+                        decoded = new TextDecoder().decode(bytes);
+                    } else {
+                        decoded = decodeURIComponent(escape(binary));
+                    }
+                    if (decoded) {
+                        return decoded;
+                    }
+                } catch (error) {
+                    if (window.SecurityUtils && typeof SecurityUtils.logSecurityEvent === 'function') {
+                        SecurityUtils.logSecurityEvent('decodeCardPayload', 'Decoding attempt failed', { error: error.message });
+                    }
+                }
+            }
+
+            return '';
+        }
+
+        function createSafeSocialAnchor(url, label) {
+            if (!label) {
+                return '';
+            }
+
+            const safeLabel = sanitizeText(label);
+
+            if (!url || typeof url !== 'string') {
+                return safeLabel;
+            }
+
+            let normalized = url.trim();
+            if (!/^https?:\/\//i.test(normalized)) {
+                normalized = `https://${normalized.replace(/^\/+/, '')}`;
+            }
+
+            let safeUrl = normalized;
+            if (window.SecurityUtils && typeof SecurityUtils.createSafeURL === 'function') {
+                safeUrl = SecurityUtils.createSafeURL(normalized) || '';
+            }
+
+            if (!safeUrl) {
+                return safeLabel;
+            }
+
+            return `<a href="${safeUrl}" target="_blank" rel="noopener" class="social-link">${safeLabel}</a>`;
+        }
+
         function typeText(text, callback) {
             greetingElement.textContent = '';
             let i = 0;
@@ -656,16 +755,40 @@
                 mobileItem.style.display = 'none';
             }
             
-            // Address (optional for personal version)
+            // Address or Location (optional for personal version)
             const addressItem = document.getElementById('address-item');
-            if (data.address && data.address.trim() !== '') {
-                // 安全處理地址換行
+            if (data.location && data.location.lat && data.location.lng) {
+                // Display GPS coordinates as Google Maps link
                 const addressElement = document.getElementById('user-address');
-                // 清空元素
+                // Clear element
                 while (addressElement.firstChild) {
                     addressElement.removeChild(addressElement.firstChild);
                 }
-                // 按行分割並添加
+                // Create Google Maps link
+                const mapsLink = document.createElement('a');
+                mapsLink.className = 'contact-link';
+                mapsLink.target = '_blank';
+                const mapsUrl = `https://maps.google.com/?q=${data.location.lat},${data.location.lng}`;
+                const canUseMapLink = !window.SecurityUtils ||
+                    (typeof SecurityUtils.validateMapURL === 'function' ? SecurityUtils.validateMapURL(mapsUrl) : true);
+
+                if (canUseMapLink) {
+                    const allowedMapOrigins = (window.SecurityUtils && SecurityUtils.ALLOWED_MAP_DOMAINS) ? SecurityUtils.ALLOWED_MAP_DOMAINS : [];
+                    SecurityUtils.setSecureAttribute(mapsLink, 'href', mapsUrl, allowedMapOrigins);
+                    mapsLink.textContent = `📍 ${data.location.lat}, ${data.location.lng}`;
+                    addressElement.appendChild(mapsLink);
+                } else {
+                    addressElement.appendChild(document.createTextNode(`${data.location.lat}, ${data.location.lng}`));
+                }
+                addressItem.style.display = 'flex';
+            } else if (data.address && data.address.trim() !== '') {
+                // Use text address
+                const addressElement = document.getElementById('user-address');
+                // Clear element
+                while (addressElement.firstChild) {
+                    addressElement.removeChild(addressElement.firstChild);
+                }
+                // Split by lines and add
                 const addressLines = data.address.split('\n');
                 addressLines.forEach((line, index) => {
                     if (index > 0) {
@@ -727,6 +850,15 @@
                     socialNote = data.socialLinks.socialNote.replace(/\n/g, '\\n');
                 }
 
+                // Handle address or GPS coordinates
+                let addressField = '';
+                if (data.location && data.location.lat && data.location.lng) {
+                    // Use GEO field to store GPS coordinates
+                    addressField = `GEO:${data.location.lat};${data.location.lng}`;
+                } else if (data.address) {
+                    addressField = `ADR;TYPE=work;CHARSET=UTF-8:;;${data.address};;;;Taiwan`;
+                }
+
                 const vcardContent = [
                     'BEGIN:VCARD',
                     'VERSION:3.0',
@@ -738,7 +870,7 @@
                     `EMAIL;TYPE=work:${data.email || ''}`,
                     data.phone ? `TEL;TYPE=work,voice:${formattedPhone}` : '',
                     data.mobile ? `TEL;TYPE=cell,voice:${formattedMobile}` : '',
-                    data.address ? `ADR;TYPE=work;CHARSET=UTF-8:;;${data.address};;;;Taiwan` : '',
+                    addressField,
                     socialNote ? `NOTE;CHARSET=UTF-8:${socialNote}` : '',
                     `PHOTO;TYPE=JPEG:${photoUrl}`,
                     `REV:${timestamp}`,
@@ -788,7 +920,7 @@
             // 從 URL 參數中獲取 NFC 傳送的 JSON 資料 - 使用安全方法
             const urlParams = new URLSearchParams(window.location.search);
             // 使用安全方法讀取URL參數
-            let cardDataParam = SecurityUtils.getSecureURLParam('data');
+            let cardDataParam = SecurityUtils.getSecureURLParam('data', { sanitize: false });
             let isCompactFormat = false;
             
             if (!cardDataParam) {
@@ -798,9 +930,11 @@
             
             if (cardDataParam) {
                 try {
-                    const urlDecodedData = decodeURIComponent(cardDataParam);
-                    const base64DecodedData = decodeURIComponent(escape(atob(urlDecodedData)));
-                    const rawData = JSON.parse(base64DecodedData);
+                    const decodedJson = decodeCardPayload(cardDataParam, { tryUrlDecode: true });
+                    if (!decodedJson) {
+                        throw new Error('Unable to parse business card content');
+                    }
+                    const rawData = JSON.parse(decodedJson);
                     
                     let cardData;
                     if (isCompactFormat) {
@@ -811,6 +945,9 @@
                     
                     return cardData;
                 } catch (error) {
+                    if (window.SecurityUtils && typeof SecurityUtils.logSecurityEvent === 'function') {
+                        SecurityUtils.logSecurityEvent('getCardDataFromNFC', 'Failed to parse card data', { error: error.message });
+                    }
                     console.error('Failed to parse card data:', error);
                     return null;
                 }
@@ -820,13 +957,13 @@
         }
 
         function convertCompactToFull(compactData) {
-            // 安全處理函數，過濾 DECRYPTION_FAILED 錯誤
+            // Safe handling function to filter DECRYPTION_FAILED errors
             const safeValue = (value) => {
                 if (!value || value === '[DECRYPTION_FAILED]') return '';
                 return value;
             };
-            
-            return {
+
+            const result = {
                 data: {
                     name: safeValue(compactData.n),
                     title: safeValue(compactData.t),
@@ -844,60 +981,82 @@
                     }
                 }
             };
+
+            // Parse location object (if exists)
+            if (compactData.loc && typeof compactData.loc === 'object' &&
+                compactData.loc.lat !== undefined && compactData.loc.lng !== undefined) {
+                result.data.location = {
+                    lat: compactData.loc.lat,
+                    lng: compactData.loc.lng
+                };
+            }
+
+            return result;
         }
 
         function processSocialLinks(text) {
+            if (!text || typeof text !== 'string') {
+                return '';
+            }
+
             const lines = text.split('\n');
-            const processedLines = lines.map(line => {
-                let processedLine = line;
-                
-                if (/^FB:/i.test(processedLine)) {
-                    processedLine = processedLine.replace(/FB:\s*(fb\.com\/[\w\.-]+|facebook\.com\/[\w\.-]+|@[\w\.-]+)/gi, function(match, url) {
-                        const cleanUrl = url.startsWith('@') ? `fb.com/${url.substring(1)}` : url;
-                        const fullUrl = cleanUrl.startsWith('http') ? cleanUrl : `https://${cleanUrl}`;
-                        return `FB: <a href="${fullUrl}" target="_blank" class="social-link">${url}</a>`;
-                    });
+            const processedLines = [];
+
+            lines.forEach((line) => {
+                const trimmed = line.trim();
+                if (!trimmed) {
+                    return;
                 }
-                else if (/^IG:/i.test(processedLine)) {
-                    processedLine = processedLine.replace(/IG:\s*(instagram\.com\/[\w\.-]+|@[\w\.-]+)/gi, function(match, url) {
-                        const cleanUrl = url.startsWith('@') ? `instagram.com/${url.substring(1)}` : url;
-                        const fullUrl = cleanUrl.startsWith('http') ? cleanUrl : `https://${cleanUrl}`;
-                        return `IG: <a href="${fullUrl}" target="_blank" class="social-link">${url}</a>`;
-                    });
-                }
-                else if (/^LINE:/i.test(processedLine)) {
-                    processedLine = processedLine.replace(/LINE:\s*(@?[\w\.-]+|line\.me\/[\w\/-]+)/gi, function(match, url) {
-                        let fullUrl;
-                        if (url.startsWith('@')) {
-                            // Official account: @323foylw -> https://line.me/ti/p/~@323foylw
-                            fullUrl = `https://line.me/ti/p/~${url}`;
-                        } else if (url.startsWith('line.me')) {
-                            fullUrl = `https://${url}`;
-                        } else if (/^[\w\.-]+$/.test(url)) {
-                            // Personal account: tsgservice -> https://line.me/ti/p/~tsgservice
-                            fullUrl = `https://line.me/ti/p/~${url}`;
+
+                let result = '';
+
+                if (/^FB:/i.test(trimmed)) {
+                    const raw = trimmed.replace(/^FB:\s*/i, '').trim();
+                    if (raw) {
+                        const normalized = raw.startsWith('@') ? `fb.com/${raw.substring(1)}` : raw;
+                        const link = normalized.startsWith('http') ? normalized : `https://${normalized}`;
+                        result = `FB: ${createSafeSocialAnchor(link, raw)}`;
+                    }
+                } else if (/^IG:/i.test(trimmed)) {
+                    const raw = trimmed.replace(/^IG:\s*/i, '').trim();
+                    if (raw) {
+                        const normalized = raw.startsWith('@') ? `instagram.com/${raw.substring(1)}` : raw;
+                        const link = normalized.startsWith('http') ? normalized : `https://${normalized}`;
+                        result = `IG: ${createSafeSocialAnchor(link, raw)}`;
+                    }
+                } else if (/^LINE:/i.test(trimmed)) {
+                    const raw = trimmed.replace(/^LINE:\s*/i, '').trim();
+                    if (raw) {
+                        let link;
+                        if (raw.startsWith('@')) {
+                            link = `https://line.me/ti/p/~${raw}`;
+                        } else if (raw.startsWith('line.me')) {
+                            link = raw.startsWith('http') ? raw : `https://${raw}`;
+                        } else if (/^[\w\.-]+$/.test(raw)) {
+                            link = `https://line.me/ti/p/~${raw}`;
                         } else {
-                            fullUrl = url.startsWith('http') ? url : `https://${url}`;
+                            link = raw.startsWith('http') ? raw : `https://${raw}`;
                         }
-                        return `LINE: <a href="${fullUrl}" target="_blank" class="social-link">${url}</a>`;
-                    });
+                        result = `LINE: ${createSafeSocialAnchor(link, raw)}`;
+                    }
+                } else if (/^GitHub:/i.test(trimmed)) {
+                    const raw = trimmed.replace(/^GitHub:\s*/i, '').trim();
+                    if (raw) {
+                        const normalized = raw.startsWith('@') ? `github.com/${raw.substring(1)}` : raw;
+                        const link = normalized.startsWith('http') ? normalized : `https://${normalized}`;
+                        result = `GitHub: ${createSafeSocialAnchor(link, raw)}`;
+                    }
+                } else if (/^https?:\/\//i.test(trimmed)) {
+                    result = createSafeSocialAnchor(trimmed, trimmed);
                 }
-                else if (/^GitHub:/i.test(processedLine)) {
-                    processedLine = processedLine.replace(/GitHub:\s*(github\.com\/[\w\.-\/]+|@[\w\.-]+)/gi, function(match, url) {
-                        const cleanUrl = url.startsWith('@') ? `github.com/${url.substring(1)}` : url;
-                        const fullUrl = cleanUrl.startsWith('http') ? cleanUrl : `https://${cleanUrl}`;
-                        return `GitHub: <a href="${fullUrl}" target="_blank" class="social-link">${url}</a>`;
-                    });
+
+                if (!result) {
+                    result = sanitizeText(trimmed);
                 }
-                else if (/^https?:\/\//i.test(processedLine)) {
-                    processedLine = processedLine.replace(/(https?:\/\/[\w\.-]+(?:\.[\w]{2,})+(?:\/[\w\.-\/\?#&=]*)?)/gi, function(match, url) {
-                        return `<a href="${url}" target="_blank" class="social-link">${url}</a>`;
-                    });
-                }
-                
-                return processedLine;
+
+                processedLines.push(result);
             });
-            
+
             return processedLines.join('\n');
         }
 
