@@ -1,21 +1,17 @@
 {
-  "last_checkpoint_id": "location-complete-2025-10-23",
-  "last_design_id": "location-complete@v1",
-  "last_user_hash": "location-design-complete",
-  "last_lifecycle_epoch": "2025-10-23T12:37:19.304+08:00",
+  "last_checkpoint_id": "coordinate-precision-2025-10-23",
+  "last_design_id": "coordinate-precision@v1",
+  "last_user_hash": "gps-coordinate-precision",
+  "last_lifecycle_epoch": "2025-10-23T13:26:51.452+08:00",
   "files_digest": {
-    "assets/bilingual-common.js": "location-object-map-links-security-enhanced",
-    "assets/security-utils.js": "map-domains-utf8-encoding-validation",
-    "nfc-generator.html": "coordinates-input-ui-security-integrated",
-    "nfc-generator-bilingual.html": "bilingual-coordinates-ui-validation",
-    "index-personal.html": "location-display-map-links-security",
-    "index-personal-en.html": "location-display-map-links-security",
-    "progress.md": "v2.1.5-location-complete"
+    "nfc-generator.html": "coordinate-precision-6-decimal-security-enhanced",
+    "nfc-generator-bilingual.html": "coordinate-precision-6-decimal-security-enhanced",
+    "progress.md": "v2.1.6-coordinate-precision-complete"
   },
   "promoted_facts": [
-    "Location 設計完整實作完成",
-    "生成器座標輸入 UI 完成",
-    "地圖連結與安全驗證整合",
-    "UTF-8 編碼與防護強化"
+    "GPS 座標精簡策略實作完成",
+    "6 位小數精度限制實施",
+    "反向標籤劫持防護強化",
+    "檔名清理與 URL 構建統一"
   ]
 }

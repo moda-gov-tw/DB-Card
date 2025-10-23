@@ -424,6 +424,37 @@
         let generatedUrl = '';
 
         const SAFE_AVATAR_URL_PREFIX = /^data:image\/(png|jpe?g|gif|webp);base64,/i;
+        const FILENAME_UNSAFE_CHARS = /[\\/:*?"<>|]/g;
+
+        function sanitizeFileName(rawName, fallback) {
+            const trimmed = safeTrim(rawName);
+            if (!trimmed) {
+                return fallback;
+            }
+            const sanitized = trimmed.replace(FILENAME_UNSAFE_CHARS, '_').replace(/\s+/g, ' ').trim();
+            return sanitized || fallback;
+        }
+
+        function createDownloadFileName(rawName, language) {
+            const base = sanitizeFileName(rawName, '');
+            if (language === 'en') {
+                return base ? `${base}-digital-business-card.png` : 'digital-business-card.png';
+            }
+            return base ? `${base}-數位名片.png` : '數位名片.png';
+        }
+
+        function buildCardUrl(indexFile, paramKey, encodedPayload) {
+            try {
+                const targetUrl = new URL(indexFile, window.location.href);
+                targetUrl.searchParams.set(paramKey, encodedPayload);
+                return targetUrl.toString();
+            } catch (error) {
+                if (window.SecurityUtils && typeof SecurityUtils.logSecurityEvent === 'function') {
+                    SecurityUtils.logSecurityEvent('buildCardUrl', 'URL construction failed', { error: error.message, indexFile });
+                }
+                return '';
+            }
+        }
 
         function safeTrim(value) {
             return typeof value === 'string' ? value.trim() : '';
@@ -643,9 +674,10 @@
                         const parsedLat = parseFloat(lat);
                         const parsedLng = parseFloat(lng);
                         if (!Number.isNaN(parsedLat) && !Number.isNaN(parsedLng)) {
+                            // 限制座標精度為 6 位小數 (~0.1 公尺精度)
                             cardData.loc = {
-                                lat: parsedLat,
-                                lng: parsedLng
+                                lat: parseFloat(parsedLat.toFixed(6)),
+                                lng: parseFloat(parsedLng.toFixed(6))
                             };
                         }
                     }
@@ -679,8 +711,12 @@
             }
             
             // 生成完整 URL（相容 GitHub Pages 網域或其他）
-            const baseUrl = window.location.origin + window.location.pathname.replace(/[^/]+$/, "") + indexFile;
-            generatedUrl = `${baseUrl}?c=${encodeURIComponent(encodedData)}`;
+            const builtUrl = buildCardUrl(indexFile, 'c', encodedData);
+            if (!builtUrl) {
+                alert('URL 生成失敗，請重新整理頁面後再試一次。');
+                return;
+            }
+            generatedUrl = builtUrl;
 
             // 計算 URL 位元組大小
             const urlByteSize = new TextEncoder().encode(generatedUrl).length;
@@ -749,7 +785,7 @@
             }
             
             // 顯示下載中狀態
-            const downloadBtn = evt && evt.target ? evt.target : null;
+            const downloadBtn = evt && evt.currentTarget ? evt.currentTarget : null;
             const originalText = downloadBtn ? downloadBtn.textContent : '';
             if (downloadBtn) {
                 downloadBtn.textContent = '⏳ 下載中...';
@@ -780,16 +816,9 @@
                     ctx.drawImage(tempImg, 0, 0, canvas.width, canvas.height);
                     
                     // 取得使用者姓名作為檔名
-                    const userName = document.getElementById('name').value.trim();
+                    const userName = document.getElementById('name').value;
                     const languageSelect = document.getElementById('languageSelect').value;
-                    
-                    // 根據語言設定檔名
-                    let fileName;
-                    if (languageSelect === 'en') {
-                        fileName = userName ? `${userName}'s Digital Business Card.png` : 'Digital Business Card.png';
-                    } else {
-                        fileName = userName ? `${userName}的數位名片.png` : '數位名片.png';
-                    }
+                    const fileName = createDownloadFileName(userName, languageSelect);
                     
                     // 轉換為下載連結
                     canvas.toBlob(function(blob) {
@@ -880,7 +909,12 @@
 
         function previewCard() {
             if (generatedUrl) {
-                window.open(generatedUrl, '_blank');
+                const previewWindow = window.open(generatedUrl, '_blank', 'noopener,noreferrer');
+                if (previewWindow) {
+                    previewWindow.opener = null;
+                } else {
+                    alert('預覽視窗被瀏覽器阻擋，請允許彈出視窗或手動複製連結。');
+                }
             } else {
                 alert('請先生成 NFC 連結');
             }

@@ -511,6 +511,39 @@
         let generatedUrl = '';
 
         const SAFE_AVATAR_URL_PREFIX = /^data:image\/(png|jpe?g|gif|webp);base64,/i;
+        const FILENAME_UNSAFE_CHARS = /[\\/:*?"<>|]/g;
+
+        function sanitizeFileName(rawName, fallback) {
+            const trimmed = safeTrim(rawName);
+            if (!trimmed) {
+                return fallback;
+            }
+            const sanitized = trimmed.replace(FILENAME_UNSAFE_CHARS, '_').replace(/\s+/g, ' ').trim();
+            return sanitized || fallback;
+        }
+
+        function createDownloadFileName(nameZh, nameEn) {
+            const sanitizedZh = sanitizeFileName(nameZh, '');
+            if (sanitizedZh) {
+                return `${sanitizedZh}-數位名片.png`;
+            }
+            const sanitizedEn = sanitizeFileName(nameEn, '');
+            if (sanitizedEn) {
+                return `${sanitizedEn}-digital-business-card.png`;
+            }
+            return 'digital-business-card.png';
+        }
+
+        function buildCardUrl(targetPage, paramKey, encodedPayload) {
+            try {
+                const targetUrl = new URL(targetPage, window.location.href);
+                targetUrl.searchParams.set(paramKey, encodedPayload);
+                return targetUrl.toString();
+            } catch (error) {
+                logSecurityEvent('buildCardUrl', 'URL construction failed', { error: error.message, targetPage });
+                return '';
+            }
+        }
 
         function safeTrim(value) {
             return typeof value === 'string' ? value.trim() : '';
@@ -590,7 +623,6 @@
             // 使用動態域名計算容量
             const encoded = encodeCompact(data);
             const layoutType = document.getElementById('layoutType').value;
-            const baseUrl = window.location.origin + window.location.pathname.replace(/[^/]+$/, "");
             
             let targetPage;
             if (layoutType === 'personal') {
@@ -601,7 +633,11 @@
                 targetPage = 'index-bilingual.html';
             }
             
-            const testUrl = `${baseUrl}${targetPage}?data=${encoded}`;
+            const testUrl = buildCardUrl(targetPage, 'data', encoded);
+            if (!testUrl) {
+                logSecurityEvent('updateCapacityMonitor', 'Failed to build preview URL', { targetPage });
+                return;
+            }
             const urlSize = new Blob([testUrl]).size;
             const percentage = Math.min((urlSize / 492) * 100, 100);
             
@@ -778,9 +814,10 @@
                         const parsedLat = parseFloat(lat);
                         const parsedLng = parseFloat(lng);
                         if (!Number.isNaN(parsedLat) && !Number.isNaN(parsedLng)) {
+                            // 限制座標精度為 6 位小數 (~0.1 公尺精度)
                             location = {
-                                lat: parsedLat,
-                                lng: parsedLng
+                                lat: parseFloat(parsedLat.toFixed(6)),
+                                lng: parseFloat(parsedLng.toFixed(6))
                             };
                         }
                     }
@@ -833,7 +870,6 @@
             // 檢查容量（使用動態域名）
             const testEncoded = encodeCompact(data);
             const testLayoutType = document.getElementById('layoutType').value;
-            const testBaseUrl = window.location.origin + window.location.pathname.replace(/[^/]+$/, "");
             
             let testTargetPage;
             if (testLayoutType === 'personal') {
@@ -844,7 +880,11 @@
                 testTargetPage = 'index-bilingual.html';
             }
             
-            const testUrl = `${testBaseUrl}${testTargetPage}?data=${testEncoded}`;
+            const testUrl = buildCardUrl(testTargetPage, 'data', testEncoded);
+            if (!testUrl) {
+                showWarning('URL 生成失敗，請稍後再試。');
+                return;
+            }
             const urlSize = new Blob([testUrl]).size;
             
             if (urlSize > 492) {
@@ -856,8 +896,6 @@
                 // 使用優化編碼
                 const encoded = encodeCompact(data);
                 const layoutType = document.getElementById('layoutType').value;
-                // 生成完整 URL（相容 GitHub Pages 網域或其他）
-                const baseUrl = window.location.origin + window.location.pathname.replace(/[^/]+$/, "");
                 
                 // 根據版面類型選擇對應頁面
                 let targetPage;
@@ -868,7 +906,12 @@
                 } else {
                     targetPage = 'index-bilingual.html';
                 }
-                generatedUrl = `${baseUrl}${targetPage}?data=${encoded}`;
+                const finalUrl = buildCardUrl(targetPage, 'data', encoded);
+                if (!finalUrl) {
+                    alert('URL 生成失敗，請重新整理頁面後再試一次。');
+                    return;
+                }
+                generatedUrl = finalUrl;
                 
                 // 顯示結果
                 document.getElementById('resultUrl').textContent = generatedUrl;
@@ -877,8 +920,9 @@
                 // 生成 QR 碼
                 generateQRCode(generatedUrl);
                 
-                const percentage = Math.round((urlSize / 492) * 100);
-                showSuccess(`生成成功！容量使用：${urlSize}/492 bytes (${percentage}%)`);
+                const finalSize = new Blob([generatedUrl]).size;
+                const percentage = Math.round((finalSize / 492) * 100);
+                showSuccess(`生成成功！容量使用：${finalSize}/492 bytes (${percentage}%)`);
                 
             } catch (error) {
                 console.error('生成失敗:', error);
@@ -893,7 +937,7 @@
                 return;
             }
 
-            const btn = evt && evt.target ? evt.target : document.querySelector('.copy-btn');
+            const btn = evt && evt.currentTarget ? evt.currentTarget : document.querySelector('.copy-btn');
             const originalText = btn ? btn.textContent : '';
             const originalBackground = btn ? btn.style.background : '';
 
@@ -937,7 +981,12 @@
         // 測試連結
         function testLink() {
             if (generatedUrl) {
-                window.open(generatedUrl, '_blank');
+                const previewWindow = window.open(generatedUrl, '_blank', 'noopener,noreferrer');
+                if (previewWindow) {
+                    previewWindow.opener = null;
+                } else {
+                    alert('預覽視窗被瀏覽器阻擋，請允許彈出視窗或手動複製連結。');
+                }
             }
         }
 
@@ -1094,7 +1143,7 @@
             }
             
             // 顯示下載中狀態
-            const downloadBtn = evt && evt.target ? evt.target : null;
+            const downloadBtn = evt && evt.currentTarget ? evt.currentTarget : null;
             const originalText = downloadBtn ? downloadBtn.textContent : '';
             if (downloadBtn) {
                 downloadBtn.textContent = '⏳ 下載中...';
@@ -1125,8 +1174,9 @@
                     ctx.drawImage(tempImg, 0, 0, canvas.width, canvas.height);
                     
                     // 取得使用者姓名作為檔名
-                    const nameZh = document.getElementById('nameZh').value.trim();
-                    const fileName = nameZh ? `${nameZh}的數位名片.png` : '數位名片.png';
+                    const nameZh = document.getElementById('nameZh').value;
+                    const nameEn = document.getElementById('nameEn').value;
+                    const fileName = createDownloadFileName(nameZh, nameEn);
                     
                     // 轉換為下載連結
                     canvas.toBlob(function(blob) {
