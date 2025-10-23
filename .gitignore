@@ -19,3 +19,7 @@ progress.md
 
 # Backup files
 .backups/
+*.bak
+*.backup
+*_backup.*
+*~.nib
