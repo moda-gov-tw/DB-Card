@@ -1,7 +1,7 @@
 ## 當前狀態
 ✅ **專案**: NFC 數位名片系統 v2.2.0
-✅ **最新完成**: .gitignore 更新（添加 tests/ 目錄排除）
-✅ **歸檔**: context/archive/gitignore-update-2025-10-23/
+✅ **最新完成**: 開發完成，成功合併到主分支
+✅ **歸檔**: context/archive/branch-merge-2025-10-23/
 
 ## 已完成任務 - 單語個人版欄位排序重新設計 (2025-10-23)
 ✅ **欄位順序調整**: 將單語個人版欄位順序改為 Name → Title → Organization → Department

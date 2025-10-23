@@ -1,5 +1,18 @@
 # DECISIONS Log
 
+## 2025-10-23 分支合併完成 [CLOSED]
+**決策**: 將「名片地址優化」分支合併到主分支，完成開發
+**狀態**: CLOSED
+**影響檔案**: 38 files changed, 8870 insertions(+), 589 deletions(-)
+**關鍵變更**:
+- 成功合併「名片地址優化」分支到 main
+- Fast-forward 合併，無衝突
+- 推送更新到遠端 origin/main (bebbd2e..b4081f5)
+- 完成 v2.2.0 版本開發
+
+**驗收標準**: ✅ 合併成功、✅ 推送完成、✅ 無衝突、✅ 遠端同步
+**回滾方案**: git reset --hard bebbd2e 回到合併前狀態
+
 ## 2025-10-23 .gitignore 更新 [CLOSED]
 **決策**: 在 .gitignore 中添加 tests/ 目錄排除規則
 **狀態**: CLOSED

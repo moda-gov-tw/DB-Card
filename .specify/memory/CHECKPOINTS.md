@@ -1,5 +1,26 @@
 # CHECKPOINTS Manifest
 
+## branch-merge-2025-10-23
+**時間**: 2025-10-23T19:45:55+08:00
+**版本**: v2.2.0
+**類型**: 開發完成分支合併
+**狀態**: COMPLETED
+
+### 變更摘要
+- 成功將「名片地址優化」分支合併到主分支
+- Fast-forward 合併，無衝突
+- 推送更新到遠端 origin/main (bebbd2e..b4081f5)
+- 完成 v2.2.0 版本開發
+
+### 檔案清單
+- 38 files changed, 8870 insertions(+), 589 deletions(-)
+- 包含所有開發期間的功能更新
+- progress.md (狀態更新)
+
+### DocOps Hash
+- STM: progress.md#branch-merge-complete
+- LTM: .specify/memory/DECISIONS.md#2025-10-23-merge-closed
+
 ## gitignore-update-2025-10-23
 **時間**: 2025-10-23T19:41:53+08:00
 **版本**: v2.2.0
