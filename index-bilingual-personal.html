@@ -428,7 +428,7 @@
             
             <!-- 語言切換按鈕 -->
             <div class="language-switch">
-                <button id="langSwitch" onclick="toggleLanguage()" class="lang-btn">
+                <button id="langSwitch" class="lang-btn" type="button">
                     🇺🇸 EN
                 </button>
             </div>
@@ -487,7 +487,7 @@
             </div>
             
             <div class="action-section">
-                <button id="downloadBtn" onclick="downloadBilingualVCard(currentData, currentLanguage)" class="download-btn">
+                <button id="downloadBtn" class="download-btn" type="button">
                     📱 <span id="downloadBtnText">加入聯絡人</span>
                 </button>
                 <div id="vcardGuide" style="background: #f3f5f6; border: 1px solid #e5e5e5; border-radius: 8px; padding: 12px 15px; margin-bottom: 20px; font-size: 0.85em; color: #495057; line-height: 1.5; max-width: 90%;">
@@ -541,10 +541,18 @@
             }
 
             updateElement('userEmail', data.email);
-            if (data.email) {
-                const emailLink = document.getElementById('userEmail');
-                if (emailLink) {
-                    safeSetAttribute(emailLink, 'href', `mailto:${data.email}`);
+            const emailLink = document.getElementById('userEmail');
+            if (emailLink) {
+                const rawEmail = typeof data.email === 'string' ? data.email.trim() : '';
+                if (rawEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(rawEmail)) {
+                    const sanitizedEmail = typeof SecurityUtils !== 'undefined' && typeof SecurityUtils.sanitizeInput === 'function'
+                        ? SecurityUtils.sanitizeInput(rawEmail, 'email')
+                        : rawEmail;
+                    safeSetAttribute(emailLink, 'href', `mailto:${sanitizedEmail}`);
+                    emailLink.removeAttribute('aria-disabled');
+                } else {
+                    emailLink.removeAttribute('href');
+                    emailLink.setAttribute('aria-disabled', 'true');
                 }
             }
 
@@ -586,7 +594,12 @@
                 orgItem.style.display = 'none';
             }
 
-            if (data.address && data.address.trim()) {
+            // 優先使用 location.label，無 location 時才使用 address
+            if (data.location && data.location.label && data.location.label.trim()) {
+                const addressText = getLocalizedText(data.location.label, lang);
+                updateElement('orgAddress', addressText);
+                addressItem.style.display = 'flex';
+            } else if (data.address && data.address.trim()) {
                 const addressText = getLocalizedText(data.address, lang);
                 updateElement('orgAddress', addressText);
                 addressItem.style.display = 'flex';
@@ -595,26 +608,7 @@
             }
 
             // 處理頭像
-            const avatar = document.getElementById('userAvatar');
-            if (avatar && data.avatar) {
-                if (SecurityUtils) {
-                    const allowedImageOrigins = [
-                        'https://i.imgur.com', 'https://imgur.com',
-                        'https://i.postimg.cc', 'https://postimages.org',
-                        'https://github.com', 'https://raw.githubusercontent.com',
-                        'https://drive.google.com'
-                    ];
-                    safeSetAttribute(avatar, 'src', data.avatar, allowedImageOrigins);
-                    avatar.style.display = 'block';
-                    avatar.onerror = function() {
-                        this.style.display = 'none';
-                    };
-                } else {
-                    console.warn('Avatar loading disabled: SecurityUtils unavailable');
-                }
-            } else if (avatar) {
-                avatar.style.display = 'none';
-            }
+            updateAvatar(data.avatar || '');
 
             // 處理社群資訊
             if (data.socialNote && typeof processSocialLinks === 'function') {
@@ -818,6 +812,22 @@
         }
 
         // 頁面初始化由 bilingual-common.js 統一處理
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const langSwitchButton = document.getElementById('langSwitch');
+            if (langSwitchButton) {
+                langSwitchButton.addEventListener('click', () => toggleLanguage());
+            }
+
+            const downloadButton = document.getElementById('downloadBtn');
+            if (downloadButton) {
+                downloadButton.addEventListener('click', () => {
+                    if (currentData) {
+                        downloadBilingualVCard(currentData, currentLanguage);
+                    }
+                });
+            }
+        });
     </script>
 </body>
 </html>

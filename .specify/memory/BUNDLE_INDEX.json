@@ -1,0 +1,17 @@
+{
+  "last_checkpoint_id": "location-refactor-2025-10-23",
+  "last_design_id": "location-refactor@v1",
+  "last_user_hash": "personal-card-location",
+  "last_lifecycle_epoch": "2025-10-23T11:44:06.656+08:00",
+  "files_digest": {
+    "assets/bilingual-common.js": "location-object-encoding-security-enhanced",
+    "index-bilingual-personal.html": "location-label-display-dom-listeners",
+    "progress.md": "v2.1.4-location-refactor-completed"
+  },
+  "promoted_facts": [
+    "Location Object 實作完成",
+    "12 欄位編碼格式支援",
+    "vCard GEO 屬性標準化",
+    "安全強化與向下相容"
+  ]
+}

@@ -9,17 +9,129 @@ if (typeof SecurityUtils === 'undefined') {
 }
 
 // 統一 SecurityUtils 檢查模式
-const safeSetAttribute = (el, attr, val, origins) => 
-    SecurityUtils?.setSecureAttribute(el, attr, val, origins) || 
-    console.error('SecurityUtils required') || false;
+const safeSetAttribute = (el, attr, val, origins) => {
+    if (!el || !attr) {
+        return false;
+    }
+
+    if (typeof SecurityUtils !== 'undefined' && typeof SecurityUtils.setSecureAttribute === 'function') {
+        SecurityUtils.setSecureAttribute(el, attr, val, origins);
+        return true;
+    }
+
+    console.error('SecurityUtils required');
+    return false;
+};
+
+const logSecurityEvent = (functionName, message, details = {}) => {
+    if (typeof SecurityUtils !== 'undefined' && typeof SecurityUtils.logSecurityEvent === 'function') {
+        SecurityUtils.logSecurityEvent(functionName, message, details);
+    }
+};
+
+const PREFERRED_LANGUAGE_KEY = 'preferredLanguage';
+
+const ALLOWED_AVATAR_ORIGINS = [
+    'https://i.imgur.com',
+    'https://imgur.com',
+    'https://i.postimg.cc',
+    'https://postimages.org',
+    'https://github.com',
+    'https://raw.githubusercontent.com',
+    'https://drive.google.com'
+];
+
+const readPreferredLanguage = () => {
+    try {
+        const stored = window.localStorage?.getItem(PREFERRED_LANGUAGE_KEY);
+        if (stored && ['zh', 'en'].includes(stored)) {
+            return stored;
+        }
+    } catch (error) {
+        logSecurityEvent('readPreferredLanguage', 'Failed to read language preference', { error: error.message });
+    }
+    return null;
+};
+
+const persistPreferredLanguage = (lang) => {
+    if (!['zh', 'en'].includes(lang)) {
+        return;
+    }
+    try {
+        window.localStorage?.setItem(PREFERRED_LANGUAGE_KEY, lang);
+    } catch (error) {
+        logSecurityEvent('persistPreferredLanguage', 'Failed to persist language preference', { error: error.message });
+    }
+};
+
+const applyDocumentLanguage = (lang) => {
+    const normalized = lang === 'en' ? 'en' : 'zh';
+    document.documentElement.lang = normalized === 'zh' ? 'zh-TW' : 'en';
+    return normalized;
+};
+
+const updateAvatar = (avatarUrl) => {
+    const avatar = document.getElementById('userAvatar');
+    if (!avatar) {
+        return;
+    }
+
+    if (!avatarUrl || typeof avatarUrl !== 'string') {
+        avatar.removeAttribute('src');
+        avatar.style.display = 'none';
+        return;
+    }
+
+    const trimmedUrl = avatarUrl.trim();
+    if (!trimmedUrl) {
+        avatar.removeAttribute('src');
+        avatar.style.display = 'none';
+        return;
+    }
+
+    const safeDataUrlPattern = /^data:image\/(png|jpe?g|gif|webp);base64,/i;
+    if (safeDataUrlPattern.test(trimmedUrl)) {
+        avatar.setAttribute('src', trimmedUrl);
+        avatar.style.display = 'block';
+        avatar.onerror = function() {
+            this.removeAttribute('src');
+            this.style.display = 'none';
+        };
+        return;
+    }
+
+    if (typeof SecurityUtils === 'undefined') {
+        console.warn('Avatar loading disabled: SecurityUtils unavailable');
+        avatar.removeAttribute('src');
+        avatar.style.display = 'none';
+        return;
+    }
+
+    const safeAvatarURL = typeof SecurityUtils.createSafeURL === 'function'
+        ? SecurityUtils.createSafeURL(trimmedUrl, ALLOWED_AVATAR_ORIGINS)
+        : trimmedUrl;
+
+    if (safeAvatarURL && SecurityUtils.validateURL && SecurityUtils.validateURL(safeAvatarURL, ALLOWED_AVATAR_ORIGINS)) {
+        safeSetAttribute(avatar, 'src', safeAvatarURL, ALLOWED_AVATAR_ORIGINS);
+        avatar.style.display = 'block';
+        avatar.onerror = function() {
+            this.removeAttribute('src');
+            this.style.display = 'none';
+        };
+    } else {
+        logSecurityEvent('updateAvatar', 'Blocked unsafe avatar URL', { attemptedUrl: trimmedUrl });
+        avatar.removeAttribute('src');
+        avatar.style.display = 'none';
+    }
+};
 
 // 全域變數
 // 偵測瀏覽器語言偏好，預設為中文
 function detectBrowserLanguage() {
     // 檢查是否有儲存的使用者偏好
-    const savedLang = localStorage.getItem('preferredLanguage');
-    if (savedLang && ['zh', 'en'].includes(savedLang)) {
-        return savedLang;
+    const savedLang = readPreferredLanguage();
+    if (savedLang) {
+        return applyDocumentLanguage(savedLang);
     }
     
     // 否則偵測瀏覽器語言
@@ -27,10 +139,7 @@ function detectBrowserLanguage() {
     const detectedLang = /^en(-[a-z]{2})?$/.test(userLang) ? 'en' : 'zh';
     console.log(`Browser language: ${userLang} → Detected: ${detectedLang}`);
     
-    // 設定 HTML 語言屬性
-    document.documentElement.lang = detectedLang === 'zh' ? 'zh-TW' : 'en';
-    
-    return detectedLang;
+    return applyDocumentLanguage(detectedLang);
 }
 
 let currentLanguage = detectBrowserLanguage();
@@ -40,6 +149,25 @@ let currentData = null;
  * 緊湊格式編碼 - 優化版本
  */
 function encodeCompact(data) {
+    // 序列化 location 為壓縮格式: "lat,lng;label" 或 "lat,lng" 或 "label"
+    const serializeLocation = (location) => {
+        if (!location) return '';
+
+        const parts = [];
+
+        // 處理座標
+        if (location.coords && typeof location.coords.lat === 'number' && typeof location.coords.lng === 'number') {
+            parts.push(`${location.coords.lat},${location.coords.lng}`);
+        }
+
+        // 處理標籤
+        if (location.label && location.label.trim()) {
+            parts.push(location.label.trim());
+        }
+
+        return parts.join(';');
+    };
+
     const compact = [
         data.name || '',
         data.title || '',
@@ -51,7 +179,8 @@ function encodeCompact(data) {
         (data.greetings || []).join(','),
         data.socialNote || '',
         data.organization || '',
-        data.address || ''
+        data.address || '',
+        serializeLocation(data.location)
     ].join('|');
 
     return btoa(encodeURIComponent(compact))
@@ -85,7 +214,8 @@ function decodeCompact(encoded) {
                 greetings: parts[6] ? parts[6].split(',') : [],
                 socialNote: parts[7] || '',
                 organization: '', // 舊版本沒有組織
-                address: '' // 舊版本沒有地址
+                address: '', // 舊版本沒有地址
+                location: null // 舊版本沒有位置
             };
         }
 
@@ -102,11 +232,61 @@ function decodeCompact(encoded) {
                 greetings: parts[7] ? parts[7].split(',') : [],
                 socialNote: parts[8] || '',
                 organization: '', // 9欄位版本沒有組織
-                address: '' // 9欄位版本沒有地址
+                address: '', // 9欄位版本沒有地址
+                location: null // 9欄位版本沒有位置
             };
         }
 
-        // 新版本格式（11個欄位，包含組織和地址）
+        // 11個欄位格式（包含組織和地址，但無位置）
+        if (parts.length === 11) {
+            return {
+                name: parts[0] || '',
+                title: parts[1] || '',
+                department: parts[2] || '',
+                email: parts[3] || '',
+                phone: parts[4] || '',
+                mobile: parts[5] || '',
+                avatar: parts[6] || '',
+                greetings: parts[7] ? parts[7].split(',') : [],
+                socialNote: parts[8] || '',
+                organization: parts[9] || '',
+                address: parts[10] || '',
+                location: null // 11欄位版本沒有位置
+            };
+        }
+
+        // 解析 location 欄位（支援 coords 和 label）
+        const parseLocation = (locationStr) => {
+            if (!locationStr || !locationStr.trim()) return null;
+
+            try {
+                // 格式: "lat,lng;label" 或 "lat,lng" 或 "label"
+                const parts = locationStr.split(';');
+                const location = {};
+
+                // 檢查第一部分是否為座標
+                if (parts[0] && parts[0].includes(',')) {
+                    const [lat, lng] = parts[0].split(',').map(s => parseFloat(s.trim()));
+                    if (!isNaN(lat) && !isNaN(lng)) {
+                        location.coords = { lat, lng };
+                    }
+                    // 如果有第二部分，則為 label
+                    if (parts[1]) {
+                        location.label = parts[1].trim();
+                    }
+                } else {
+                    // 沒有逗號，整個字串為 label
+                    location.label = locationStr.trim();
+                }
+
+                return Object.keys(location).length > 0 ? location : null;
+            } catch (error) {
+                console.warn('Location parsing error:', error);
+                return null;
+            }
+        };
+
+        // 新版本格式（12個欄位，包含組織、地址和位置）
         return {
             name: parts[0] || '',
             title: parts[1] || '',
@@ -118,7 +298,8 @@ function decodeCompact(encoded) {
             greetings: parts[7] ? parts[7].split(',') : [],
             socialNote: parts[8] || '',
             organization: parts[9] || '',
-            address: parts[10] || ''
+            address: parts[10] || '',
+            location: parseLocation(parts[11])
         };
     } catch (error) {
         console.error('解碼失敗:', error);
@@ -152,21 +333,19 @@ function getLocalizedText(value, lang = 'zh') {
  * 切換語言
  */
 function switchLanguage(lang) {
-    if (!currentData) return;
-    
-    currentLanguage = lang;
-    document.documentElement.lang = lang === 'zh' ? 'zh-TW' : 'en';
-    
-    // 儲存使用者語言偏好
-    localStorage.setItem('preferredLanguage', lang);
-    
-    renderBilingualCard(currentData, lang);
-    updateLanguageButton(lang);
-    updatePageTitle(lang);
-    
-    // 更新界面文字
+    const normalizedLang = applyDocumentLanguage(lang);
+    currentLanguage = normalizedLang;
+    persistPreferredLanguage(normalizedLang);
+
+    if (currentData) {
+        renderBilingualCard(currentData, normalizedLang);
+        updatePageTitle(normalizedLang);
+    }
+
+    updateLanguageButton(normalizedLang);
+
     if (typeof updateUIText === 'function') {
-        updateUIText(lang);
+        updateUIText(normalizedLang);
     }
 }
 
@@ -261,6 +440,20 @@ function renderBilingualCard(data, lang = 'zh') {
     updateElement('userTitle', title);
     updateElement('userDepartment', department);
     updateElement('userEmail', data.email);
+    const emailLink = document.getElementById('userEmail');
+    if (emailLink) {
+        const rawEmail = typeof data.email === 'string' ? data.email.trim() : '';
+        if (rawEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(rawEmail)) {
+            const sanitizedEmail = typeof SecurityUtils !== 'undefined' && typeof SecurityUtils.sanitizeInput === 'function'
+                ? SecurityUtils.sanitizeInput(rawEmail, 'email')
+                : rawEmail;
+            safeSetAttribute(emailLink, 'href', `mailto:${sanitizedEmail}`);
+            emailLink.removeAttribute('aria-disabled');
+        } else {
+            emailLink.removeAttribute('href');
+            emailLink.setAttribute('aria-disabled', 'true');
+        }
+    }
     
     // 處理電話顯示
     const phoneItem = document.getElementById('phoneItem');
@@ -289,7 +482,9 @@ function renderBilingualCard(data, lang = 'zh') {
     }
     
     if (data.avatar) {
-        updateElement('userAvatar', '', 'src', data.avatar);
+        updateAvatar(data.avatar);
+    } else {
+        updateAvatar('');
     }
     
     // 更新問候語並重新啟動打字機效果
@@ -448,6 +643,24 @@ function generateBilingualVCard(data, lang = 'zh') {
         socialNote = `\nNOTE;CHARSET=UTF-8:${socialText}: ${escapeVCardText(data.socialNote.replace(/\n/g, ' | '))}`;
     }
 
+    // 處理位置資訊：使用 GEO 屬性和 location 物件
+    let geoLine = '';
+    let locationLabel = '';
+    if (data.location) {
+        // 如果有經緯度座標，使用 GEO 屬性
+        if (data.location.coords &&
+            typeof data.location.coords.lat === 'number' &&
+            typeof data.location.coords.lng === 'number') {
+            geoLine = `GEO:${data.location.coords.lat};${data.location.coords.lng}`;
+        }
+
+        // 如果有位置標籤，加入 NOTE
+        if (data.location.label && data.location.label.trim()) {
+            const locationText = lang === 'zh' ? '位置' : 'Location';
+            locationLabel = `\nNOTE;CHARSET=UTF-8:${locationText}: ${escapeVCardText(data.location.label)}`;
+        }
+    }
+
     const prodId = lang === 'zh' ?
         'PRODID:-//moda//NFC 數位名片//ZH' :
         'PRODID:-//moda//NFC Digital Business Card//EN';
@@ -463,8 +676,9 @@ EMAIL;TYPE=work:${data.email || ''}
 ${data.phone ? `TEL;TYPE=work,voice:${data.phone}` : ''}
 ${data.mobile ? `TEL;TYPE=cell,voice:${data.mobile}` : ''}
 ${hasCustomAddress ? `ADR;TYPE=work;CHARSET=UTF-8:;;${escapeVCardText(orgAddress)};;;;Taiwan` : ''}
+${geoLine}
 ${data.avatar ? `PHOTO;TYPE=JPEG:${data.avatar}` : ''}
-${greetingNote}${socialNote}
+${greetingNote}${socialNote}${locationLabel}
 REV:${new Date().toISOString().replace(/[-:]/g, '').split('.')[0]}Z
 END:VCARD`.replace(/\n\n/g, '\n');
 
@@ -550,35 +764,7 @@ function initializePage() {
                 generateQRCode();
             }
             
-            // 處理頭像
-            const avatar = document.getElementById('userAvatar');
-            if (avatar && currentData.avatar) {
-                if (SecurityUtils) {
-                    // 使用 SecurityUtils 安全設置圖片來源，包含白名單驗證
-                    const allowedImageOrigins = [
-                        'https://i.imgur.com', 'https://imgur.com',
-                        'https://i.postimg.cc', 'https://postimages.org',
-                        'https://github.com', 'https://raw.githubusercontent.com',
-                        'https://drive.google.com'
-                    ];
-                    // Use createSafeURL to validate and process the avatar URL
-                    const safeAvatarURL = SecurityUtils.createSafeURL(currentData.avatar, allowedImageOrigins);
-                    if (safeAvatarURL) {
-                        safeSetAttribute(avatar, 'src', safeAvatarURL, allowedImageOrigins);
-                        avatar.style.display = 'block';
-                        avatar.onerror = function() {
-                            this.style.display = 'none';
-                        };
-                    } else {
-                        // If URL is invalid/empty, hide avatar
-                        avatar.style.display = 'none';
-                    }
-                } else {
-                    console.warn('Avatar loading disabled: SecurityUtils unavailable');
-                }
-            } else if (avatar) {
-                avatar.style.display = 'none';
-            }
+            updateAvatar(currentData.avatar);
             
             // 處理社群資訊
             if (currentData.socialNote && typeof processSocialLinks === 'function') {

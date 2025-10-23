@@ -1,23 +1,26 @@
 ## 當前狀態
-✅ **專案**: NFC 數位名片系統 v2.1.3
-✅ **最新完成**: QR 碼容量修復與 Avatar 空值處理
-✅ **歸檔**: context/archive/qr-avatar-fixes-2025-10-14/
+✅ **專案**: NFC 數位名片系統 v2.1.4
+✅ **最新完成**: 個人版地址座標重構 - Location Object 實作
+✅ **歸檔**: context/archive/location-refactor-2025-10-23/
 
-## 已完成任務 - QR 碼與 Avatar 修復 (2025-10-14)
-✅ **QR 容量修復**: 錯誤修正等級 H→L，解決 1692>1056 溢出問題
-✅ **Avatar 空值處理**: 單語版本添加空值檢查，正確隱藏空 avatar
-✅ **回退遠端版本**: 移除複雜優化，採用簡單有效的修復方案
-✅ **用戶體驗優先**: 保持完整功能，僅調整技術參數
+## 已完成任務 - 個人版地址座標重構 (2025-10-23)
+✅ **Location Object 實作**: 新增 location{coords, label} 結構化資料
+✅ **編碼優化**: decodeCompact/encodeCompact 支援座標序列化
+✅ **vCard GEO 屬性**: generateBilingualVCard 使用標準 GEO 格式
+✅ **顯示邏輯**: renderPersonalCard 優先讀取 location.label
+✅ **安全強化**: 語言偏好集中化、頭像白名單、DOM 事件監聽器
+✅ **向下相容**: 支援舊版 address 欄位回退機制
 
 ## 解決的問題
-- 🎯 **QR 碼生成失敗**: 容量溢出 → 調整錯誤修正等級解決
-- 🖼️ **Avatar 顯示異常**: 空值時仍顯示 → 添加空值檢查隱藏
-- 📱 **用戶體驗**: 避免複雜優化影響，採用最小化修復
-- 🔧 **技術債務**: 清理不必要的複雜邏輯
+- 🗺️ **容量優化**: 座標格式取代長地址文字，降低 NFC 容量使用
+- 📍 **結構化資料**: Location Object 提供 coords{lat,lng} + label 完整資訊
+- 🔄 **相容性**: 新舊資料格式並存，平滑遷移
+- 🛡️ **安全提升**: localStorage 包裝、頭像白名單、電子郵件驗證
 
-## 提交記錄
-- `43e9934`: QR 錯誤修正等級 H→L 解決容量溢出
-- `7ff4be3`: Avatar 空值檢查修復，正確隱藏空值情況
+## 技術實作
+- **資料層**: 12 欄位格式支援，parseLocation/serializeLocation 函式
+- **展示層**: location.label 雙語顯示，GEO 屬性 vCard 生成
+- **安全層**: SecurityUtils 整合，白名單驗證，事件監聽器
 
 ---
-**歷史任務已歸檔至**: `context/archive/avatar-security-fixes-2025-10-14/progress-snapshot.md`
+**歷史任務已歸檔至**: `context/archive/qr-avatar-fixes-2025-10-14/progress-snapshot.md`
