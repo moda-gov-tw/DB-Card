@@ -1,5 +1,17 @@
 # DECISIONS Log
 
+## 2025-10-23 .gitignore 更新 [CLOSED]
+**決策**: 在 .gitignore 中添加 tests/ 目錄排除規則
+**狀態**: CLOSED
+**影響檔案**: .gitignore
+**關鍵變更**:
+- 添加 tests/ 目錄排除規則
+- 添加 "# Test files" 註解說明
+- 避免測試檔案被版本控制追蹤
+
+**驗收標準**: ✅ .gitignore 語法正確、✅ 規則生效、✅ 格式一致
+**回滾方案**: 移除 .gitignore 第 27-28 行
+
 ## 2025-10-23 單語個人版欄位重新設計 [CLOSED]
 **決策**: 統一所有個人版本的欄位排序為 Name → Title → Organization → Department
 **狀態**: CLOSED

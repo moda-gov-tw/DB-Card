@@ -1,17 +1,16 @@
 {
-  "last_checkpoint_id": "personal-field-unification-2025-10-23",
-  "last_lifecycle_epoch": "2025-10-23T19:36:45+08:00",
-  "last_design_id": "personal-field-hierarchy-unification@v2.2.0",
-  "last_user_hash": "personal-field-unification-request",
+  "last_checkpoint_id": "gitignore-update-2025-10-23",
+  "last_lifecycle_epoch": "2025-10-23T19:41:53+08:00",
+  "last_design_id": "gitignore-tests-exclusion@v2.2.0",
+  "last_user_hash": "gitignore-tests-update-request",
   "files_digest": {
-    "index-personal.html": "單語中文版欄位順序統一(Name→Title→Organization→Department)",
-    "index-personal-en.html": "單語英文版欄位順序統一(Name→Title→Organization→Department)",
-    "progress.md": "任務狀態更新為單語個人版欄位重新設計完成"
+    ".gitignore": "添加tests/目錄排除規則,避免測試檔案被版本控制追蹤",
+    "progress.md": "任務狀態更新為.gitignore更新完成"
   },
   "promoted_facts": [
-    "所有個人版本欄位順序統一完成",
-    "設計邏輯基於DDD資訊架構原則",
-    "視覺層次在所有版本保持一致",
-    "個人版本間完全統一的使用者體驗"
+    ".gitignore更新完成",
+    "tests目錄排除規則生效",
+    "測試檔案不再被版本控制追蹤",
+    "配置檔案格式正確一致"
   ]
 }

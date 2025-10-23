@@ -1,5 +1,25 @@
 # CHECKPOINTS Manifest
 
+## gitignore-update-2025-10-23
+**時間**: 2025-10-23T19:41:53+08:00
+**版本**: v2.2.0
+**類型**: .gitignore 配置更新
+**狀態**: COMPLETED
+
+### 變更摘要
+- 在 .gitignore 中添加 tests/ 目錄排除規則
+- 添加 "# Test files" 註解說明
+- 避免測試檔案被版本控制追蹤
+- 保持配置檔案格式一致性
+
+### 檔案清單
+- .gitignore (添加 tests/ 排除規則)
+- progress.md (狀態更新)
+
+### DocOps Hash
+- STM: progress.md#gitignore-update-complete
+- LTM: .specify/memory/DECISIONS.md#2025-10-23-gitignore-closed
+
 ## personal-field-unification-2025-10-23
 **時間**: 2025-10-23T19:36:45+08:00
 **版本**: v2.2.0

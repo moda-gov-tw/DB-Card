@@ -23,3 +23,6 @@ progress.md
 *.backup
 *_backup.*
 *~.nib
+
+# Test files
+tests/
