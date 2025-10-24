@@ -353,7 +353,35 @@ function encodeCompact(data) {
  */
 function decodeCompact(encoded) {
     try {
-        const compact = base64Helper.decode(encoded);
+        const compactValue = base64Helper.decode(encoded);
+        if (compactValue === null) {
+            throw new Error('Base64 decode returned null');
+        }
+
+        const tryPercentDecode = (value) => {
+            if (typeof value !== 'string' || value.indexOf('%') === -1) {
+                return null;
+            }
+            try {
+                return decodeURIComponent(value);
+            } catch (error) {
+                logSecurityEvent('decodeCompact', 'Percent decode failed', { error: error.message });
+                return null;
+            }
+        };
+
+        let compact = compactValue;
+
+        if (compact.indexOf('|') === -1) {
+            const percentDecoded = tryPercentDecode(compact);
+            if (percentDecoded) {
+                const legacyParts = percentDecoded.split('|');
+                if (legacyParts.length >= 8) {
+                    compact = percentDecoded;
+                }
+            }
+        }
+
         if (compact === null) {
             throw new Error('Base64 decode returned null');
         }

@@ -3,6 +3,15 @@
 ✅ **最新完成**: 開發完成，成功合併到主分支
 ✅ **歸檔**: context/archive/branch-merge-2025-10-23/
 
+## Hotfix - legacy compact payload 相容性修復 (2025-10-24)
+✅ **問題來源**: 舊版在 base64 前先 `encodeURIComponent`，導致欄位分隔符號變成 `%7C`，v2.2.0 解析不到 `|`，姓名顯示為 `%E9%99%B3...`。
+✅ **修復方案**: `assets/bilingual-common.js:354` 新增百分比解碼 fallback，僅在找不到 `|` 但偵測到 `%` 時採用，且需產出 ≥ 8 欄確保是 legacy 資料。
+✅ **適用範圍**: 所有載入 `bilingual-common.js` 的雙語版頁面（雙語主頁、雙語個人版、生成器）均恢復舊資料解析支援。
+✅ **測試紀錄**:
+  - 以 `index-bilingual-personal.html` 載入 <https://db-card.pages.dev/index-bilingual-personal?...> 舊連結，姓名/職稱恢復正常。
+  - 語言切換按鈕往返測試，雙語欄位與問候語皆正確更新。
+  - 於瀏覽器 console 透過 `decodeCompact`/`generateBilingualVCard` 檢查，匯出的 vCard 中文/英文版本均帶正確姓名與問候語。
+
 ## 已完成任務 - 單語個人版欄位排序重新設計 (2025-10-23)
 ✅ **欄位順序調整**: 將單語個人版欄位順序改為 Name → Title → Organization → Department
 ✅ **雙版本同步**: 中文版 (index-personal.html) 與英文版 (index-personal-en.html) 同步調整

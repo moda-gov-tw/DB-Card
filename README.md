@@ -572,6 +572,7 @@ A: 下載 vCard 後，請依照不同裝置操作：
 - ✅ **坐標精度限制**: 實施 6 位小數精度上限，含安全性強化
 - ✅ **視覺階層優化**: 個人版名片部門欄位視覺階層增強，提升可讀性
 - ✅ **備份檔案排除**: 更新 .gitignore 排除所有備份檔案類型
+- ✅ **2.2.0 Hotfix**: `decodeCompact` 新增百分比解碼 fallback，恢復 v2.1.x 以前的 `%` 編碼 payload 解析，已在 `index-bilingual-personal.html` 與 `downloadBilingualVCard` 驗證過中文/英文 vCard 正確性
 
 ### v2.1.9 (2025-10) - 位置物件完整實作版
 - ✅ **Location 設計完成**: 完成 Location Object 完整設計與實作
