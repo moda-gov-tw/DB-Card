@@ -295,7 +295,7 @@
                 </div>
                 
                 <div class="form-group">
-                    <label>職稱 / Title <span class="required">*</span>：</label>
+                    <label>職稱 / Title <span class="required" id="titleRequiredMark">*</span>：</label>
                     <div class="input-group">
                         <div class="lang-label">🇹🇼</div>
                         <input type="text" id="titleZh" placeholder="中文職稱" required maxlength="30">
@@ -314,7 +314,7 @@
                 </div>
                 
                 <div class="form-group">
-                    <label>電子郵件 <span class="required">*</span>：</label>
+                    <label>電子郵件 <span class="required" id="emailRequiredMark">*</span>：</label>
                     <input type="email" id="email" placeholder="your.email@moda.gov.tw" required>
                 </div>
                 
@@ -819,12 +819,18 @@
 
         // 收集表單資料
         function collectFormData() {
+            const layoutTypeElement = document.getElementById('layoutType');
+            const layoutType = layoutTypeElement ? layoutTypeElement.value : 'official-yanping';
+            const isPersonal = layoutType === 'personal';
             const nameZh = sanitizeInput(document.getElementById('nameZh').value.trim());
             const nameEn = sanitizeInput(document.getElementById('nameEn').value.trim());
             const titleZh = sanitizeInput(document.getElementById('titleZh').value.trim());
             const titleEn = sanitizeInput(document.getElementById('titleEn').value.trim());
             
-            if (!nameZh || !nameEn || !titleZh || !titleEn) {
+            if (!nameZh || !nameEn) {
+                return null;
+            }
+            if (!isPersonal && (!titleZh || !titleEn)) {
                 return null;
             }
             
@@ -872,7 +878,6 @@
             }
 
             // 收集組織和地址（僅個人版）
-            const layoutType = document.getElementById('layoutType').value;
             let organization = '';
             let address = '';
             let location = null;
@@ -962,21 +967,24 @@
 
         // 生成雙語 NFC 連結
         function generateBilingualNFC() {
+            const layoutType = document.getElementById('layoutType').value;
+            const isPersonal = layoutType === 'personal';
             const data = collectFormData();
             
             if (!data) {
-                alert('請填寫必填欄位：中英文姓名和職稱');
+                const message = isPersonal ? '請至少填寫中文與英文姓名。' : '請填寫必填欄位：中英文姓名和職稱';
+                alert(message);
                 return;
             }
             
-            if (!data.email) {
+            if (!data.email && !isPersonal) {
                 alert('請填寫電子郵件');
                 return;
             }
             
             // 檢查容量（使用動態域名）
             const testEncoded = encodeCompact(data);
-            const testLayoutType = document.getElementById('layoutType').value;
+            const testLayoutType = layoutType;
             
             let testTargetPage;
             if (testLayoutType === 'personal') {
@@ -1002,8 +1010,6 @@
             try {
                 // 使用優化編碼
                 const encoded = encodeCompact(data);
-                const layoutType = document.getElementById('layoutType').value;
-                
                 // 根據版面類型選擇對應頁面
                 let targetPage;
                 if (layoutType === 'personal') {
@@ -1204,6 +1210,24 @@
             }
         }
 
+        function setFieldRequired(field, required) {
+            if (!field) return;
+            if (required) {
+                field.required = true;
+                field.setAttribute('required', '');
+            } else {
+                field.required = false;
+                field.removeAttribute('required');
+            }
+        }
+
+        function toggleRequiredIndicator(elementId, visible) {
+            const indicator = document.getElementById(elementId);
+            if (indicator) {
+                indicator.style.visibility = visible ? 'visible' : 'hidden';
+            }
+        }
+
         // 切換個人版專屬欄位
         function togglePersonalFields() {
             const layoutType = document.getElementById('layoutType').value;
@@ -1218,6 +1242,14 @@
             if (addressGroup) {
                 addressGroup.style.display = isPersonal ? 'block' : 'none';
             }
+
+            // 個人版僅保留姓名為必填
+            setFieldRequired(document.getElementById('titleZh'), !isPersonal);
+            setFieldRequired(document.getElementById('titleEn'), !isPersonal);
+            setFieldRequired(document.getElementById('email'), !isPersonal);
+
+            toggleRequiredIndicator('titleRequiredMark', !isPersonal);
+            toggleRequiredIndicator('emailRequiredMark', !isPersonal);
 
             // 更新容量監控
             updateCapacityMonitor();

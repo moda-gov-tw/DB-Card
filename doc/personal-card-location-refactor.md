@@ -51,6 +51,7 @@
 
 ### 生成器（雙語：`nfc-generator-bilingual.html`）
 - 個人版地址欄位改為三選一模式。
+- 個人版僅保留中英文姓名為必填，其餘欄位改為選填，透過 `togglePersonalFields()` 動態調整 `required` 屬性。
 - `collectFormData()` 生成：
   - `locationCoords` → `"<lat>,<lng>"`（7 位小數精度）。
   - `locationMapId` → Google Maps ID 字串。

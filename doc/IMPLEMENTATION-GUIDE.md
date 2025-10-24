@@ -471,7 +471,8 @@ function calculateCapacity(data) {
         <div class="form-group">
             <label>版面類型：</label>
             <select id="layoutType">
-                <option value="official">機關版（含 moda Logo）</option>
+                <option value="official-yanping">機關版（延平大樓）</option>
+                <option value="official-xinyi">機關版（新光大樓）</option>
                 <option value="personal">個人版（無 Logo）</option>
             </select>
         </div>
@@ -505,6 +506,8 @@ function calculateCapacity(data) {
 </body>
 </html>
 ```
+
+> 💡 **欄位必填規則**：機關版維持姓名／職稱／Email 必填；切換為個人版時僅保留姓名為必填，職稱與 Email 透過 `togglePersonalFields()` 動態移除 `required` 屬性並隱藏星號，符合自訂名片的彈性需求。
 
 ### 2. 雙語名片頁面
 

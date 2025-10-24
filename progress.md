@@ -12,6 +12,16 @@
   - 語言切換按鈕往返測試，雙語欄位與問候語皆正確更新。
   - 於瀏覽器 console 透過 `decodeCompact`/`generateBilingualVCard` 檢查，匯出的 vCard 中文/英文版本均帶正確姓名與問候語。
 
+## 更新 - 個人版生成器欄位降為選填 (2025-10-24)
+✅ **需求背景**: 生成器個人版過去沿用機關版必填規則（職稱、Email 等），導致自訂名片場景需填寫多餘欄位。
+✅ **改動內容**:
+  - `nfc-generator-bilingual.html` 個人版切換時僅保留中英文姓名為必填，其餘欄位改為可選填。
+  - UI 星號同步透過 `toggleRequiredIndicator` 顯示/隱藏，並以 `setFieldRequired` 動態處理 `required` 屬性。
+  - 驗證提示訊息區分個人版與機關版，避免顯示錯誤提示。
+✅ **測試紀錄**:
+  - 個人版僅填姓名即可生成連結與 QR 碼。
+  - 切換回機關版後職稱/Email 仍為必填，缺漏會顯示既有提示。
+
 ## 已完成任務 - 單語個人版欄位排序重新設計 (2025-10-23)
 ✅ **欄位順序調整**: 將單語個人版欄位順序改為 Name → Title → Organization → Department
 ✅ **雙版本同步**: 中文版 (index-personal.html) 與英文版 (index-personal-en.html) 同步調整
