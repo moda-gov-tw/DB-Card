@@ -1,5 +1,27 @@
 # CHECKPOINTS Manifest
 
+## hotfix-legacy-compatibility-2025-10-24
+**時間**: 2025-10-24T11:48:25+08:00
+**版本**: v2.2.0
+**類型**: Hotfix 與生成器優化
+**狀態**: COMPLETED
+
+### 變更摘要
+- 修復舊版 encodeURIComponent 格式相容性問題
+- 個人版生成器欄位降為選填，僅保留中英文姓名必填
+- 單語個人版欄位排序統一設計
+- 提升 v2.2.0 版本穩定性與使用者體驗
+
+### 檔案清單
+- assets/bilingual-common.js (百分比解碼 fallback)
+- nfc-generator-bilingual.html (個人版欄位優化)
+- index-personal.html, index-personal-en.html (欄位排序統一)
+- progress.md (狀態更新)
+
+### DocOps Hash
+- STM: progress.md#hotfix-legacy-compatibility-complete
+- LTM: .specify/memory/DECISIONS.md#2025-10-24-hotfix-closed
+
 ## branch-merge-2025-10-23
 **時間**: 2025-10-23T19:45:55+08:00
 **版本**: v2.2.0

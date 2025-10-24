@@ -1,5 +1,31 @@
 # DECISIONS Log
 
+## 2025-10-24 個人版生成器欄位優化 [CLOSED]
+**決策**: 個人版生成器僅保留中英文姓名為必填，其餘欄位改為可選填
+**狀態**: CLOSED
+**影響檔案**: nfc-generator-bilingual.html
+**關鍵變更**:
+- 個人版切換時僅保留中英文姓名為必填
+- UI 星號同步透過 toggleRequiredIndicator 顯示/隱藏
+- setFieldRequired 動態處理 required 屬性
+- 驗證提示訊息區分個人版與機關版
+
+**驗收標準**: ✅ 個人版僅填姓名可生成、✅ 機關版必填規則維持、✅ UI 提示正確
+**回滾方案**: git checkout HEAD -- nfc-generator-bilingual.html
+
+## 2025-10-24 legacy compact payload 相容性修復 [CLOSED]
+**決策**: 新增百分比解碼 fallback 支援舊版 encodeURIComponent 格式
+**狀態**: CLOSED
+**影響檔案**: assets/bilingual-common.js
+**關鍵變更**:
+- decodeCompact 新增百分比解碼 fallback (line 354)
+- 僅在找不到 | 但偵測到 % 時採用
+- 需產出 ≥ 8 欄確保是 legacy 資料
+- 適用所有載入 bilingual-common.js 的雙語版頁面
+
+**驗收標準**: ✅ 舊連結姓名正常顯示、✅ 語言切換正確、✅ vCard 匯出正確
+**回滾方案**: 移除 assets/bilingual-common.js line 354 百分比解碼邏輯
+
 ## 2025-10-23 分支合併完成 [CLOSED]
 **決策**: 將「名片地址優化」分支合併到主分支，完成開發
 **狀態**: CLOSED
