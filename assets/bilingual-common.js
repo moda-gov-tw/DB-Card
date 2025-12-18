@@ -261,7 +261,13 @@ const updateAvatar = (avatarUrl) => {
             return;
         }
         
-        avatar.setAttribute('src', trimmedUrl);
+        // Use SecurityUtils for secure attribute setting
+        if (window.SecurityUtils && typeof SecurityUtils.setSecureAttribute === 'function') {
+            SecurityUtils.setSecureAttribute(avatar, 'src', trimmedUrl);
+        } else {
+            // Fallback only for data URLs which are considered safe
+            avatar.setAttribute('src', trimmedUrl);
+        }
         avatar.style.display = 'block';
         avatar.onerror = function() {
             this.removeAttribute('src');

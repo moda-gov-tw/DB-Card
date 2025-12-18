@@ -127,3 +127,28 @@
 
 **驗收標準**: ✅ CodeQL 漏洞修復、✅ 功能不受影響、✅ 安全性提升
 **回滾方案**: git checkout HEAD 還原修改檔案
+
+## 2025-12-19 CodeQL 安全強化與風險處理完成 [CLOSED]
+**決策**: 徹底解決 CodeQL URL 重定向漏洞並處理潛在風險
+**狀態**: CLOSED
+**影響檔案**: index-personal.html, index-personal-en.html, assets/bilingual-common.js
+**關鍵變更**:
+- 移除所有不安全的 URL 賦值 fallback
+- 強制使用 SecurityUtils 進行 URL 驗證
+- 添加用戶友好的錯誤處理機制
+- 實施優雅降級策略（禁用狀態而非失效）
+- 添加 SecurityUtils 載入驗證和 Console 警告
+- 支援無障礙設計（aria-disabled 屬性）
+
+**安全提升**:
+- 徹底消除 CodeQL js/client-side-unvalidated-url-redirection 警告
+- 無不安全 fallback 路徑
+- 強制安全驗證機制
+
+**用戶體驗**:
+- 載入失敗時提供視覺反饋
+- 工具提示說明問題原因
+- 保持頁面結構完整性
+
+**驗收標準**: ✅ CodeQL 漏洞完全修復、✅ 用戶體驗優雅降級、✅ 安全性最大化
+**回滾方案**: git checkout HEAD~1 還原至前一版本

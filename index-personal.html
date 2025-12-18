@@ -761,14 +761,13 @@
             if (window.SecurityUtils && typeof SecurityUtils.setSecureAttribute === 'function') {
                 SecurityUtils.setSecureAttribute(link, 'href', url, getAllowedMapOrigins());
             } else {
-                // Fallback validation for map URLs
-                const allowedOrigins = ['https://maps.google.com', 'https://www.google.com'];
-                if (allowedOrigins.some(origin => url.startsWith(origin))) {
-                    link.href = url;
-                } else {
-                    console.warn('Blocked unsafe URL:', url);
-                    return null;
-                }
+                // SecurityUtils not available - provide user feedback
+                console.warn('SecurityUtils not available, map link disabled for security');
+                link.style.color = '#999';
+                link.style.cursor = 'not-allowed';
+                link.setAttribute('aria-disabled', 'true');
+                link.title = '地圖連結暫時無法使用（安全模組載入失敗）';
+                return link; // Return disabled link instead of null
             }
 
             link.textContent = textContent;
@@ -826,6 +825,13 @@
                 correctLevel: QRCode.CorrectLevel.L
             });
         }
+
+        // Verify SecurityUtils loading on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            if (!window.SecurityUtils) {
+                console.error('SecurityUtils failed to load - some security features may be disabled');
+            }
+        });
 
         function renderCard(userData) {
             const data = userData.data;
