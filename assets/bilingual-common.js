@@ -264,11 +264,14 @@ const updateAvatar = (avatarUrl) => {
         // Use SecurityUtils for secure attribute setting
         if (window.SecurityUtils && typeof SecurityUtils.setSecureAttribute === 'function') {
             SecurityUtils.setSecureAttribute(avatar, 'src', trimmedUrl);
+            avatar.style.display = 'block';
         } else {
-            // Fallback only for data URLs which are considered safe
-            avatar.setAttribute('src', trimmedUrl);
+            // No unsafe fallback - require SecurityUtils for security
+            console.warn('SecurityUtils not available, avatar disabled for security');
+            avatar.removeAttribute('src');
+            avatar.style.display = 'none';
+            return;
         }
-        avatar.style.display = 'block';
         avatar.onerror = function() {
             this.removeAttribute('src');
             this.style.display = 'none';
