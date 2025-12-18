@@ -761,7 +761,14 @@
             if (window.SecurityUtils && typeof SecurityUtils.setSecureAttribute === 'function') {
                 SecurityUtils.setSecureAttribute(link, 'href', url, getAllowedMapOrigins());
             } else {
-                link.href = url;
+                // Fallback validation for map URLs
+                const allowedOrigins = ['https://maps.google.com', 'https://www.google.com'];
+                if (allowedOrigins.some(origin => url.startsWith(origin))) {
+                    link.href = url;
+                } else {
+                    console.warn('Blocked unsafe URL:', url);
+                    return null;
+                }
             }
 
             link.textContent = textContent;

@@ -20,6 +20,39 @@
     ];
     const GOOGLE_MAPS_SHARE_BASE = 'https://maps.app.goo.gl';
 
+    /**
+     * 允許的社群媒體網域白名單
+     * 用於驗證社群連結的安全性，防止 Open Redirect 攻擊
+     */
+    const ALLOWED_SOCIAL_DOMAINS = [
+        'https://facebook.com',
+        'https://www.facebook.com',
+        'https://m.facebook.com',
+        'https://fb.com',
+        'https://www.fb.com',
+        'https://instagram.com',
+        'https://www.instagram.com',
+        'https://m.instagram.com',
+        'https://line.me',
+        'https://github.com',
+        'https://www.github.com',
+        'https://twitter.com',
+        'https://www.twitter.com',
+        'https://m.twitter.com',
+        'https://x.com',
+        'https://www.x.com',
+        'https://linkedin.com',
+        'https://www.linkedin.com',
+        'https://m.linkedin.com',
+        'https://youtube.com',
+        'https://www.youtube.com',
+        'https://m.youtube.com',
+        'https://youtu.be',
+        'https://discord.gg',
+        'https://discord.com',
+        'https://www.discord.com'
+    ];
+
     function encodeBinaryString(bytes) {
         let binary = '';
         const chunkSize = 0x8000;
@@ -32,8 +65,9 @@
 
     const SecurityUtils = {
 
-        // 公開地圖網域白名單常數
+        // 公開網域白名單常數
         ALLOWED_MAP_DOMAINS: ALLOWED_MAP_DOMAINS,
+        ALLOWED_SOCIAL_DOMAINS: ALLOWED_SOCIAL_DOMAINS,
         GOOGLE_MAPS_SHARE_BASE: GOOGLE_MAPS_SHARE_BASE,
 
         /**
@@ -226,6 +260,12 @@
                     return false;
                 }
                 
+                // 檢查是否包含危險字元或腳本
+                if (url.toLowerCase().includes('javascript:') || url.toLowerCase().includes('data:')) {
+                    this.logSecurityEvent('validateURL', 'Blocked dangerous scheme in string', { url: url.substring(0, 50) });
+                    return false;
+                }
+
                 const urlObj = new URL(url);
                 
                 // 允許的協議白名單
@@ -236,15 +276,22 @@
                 }
                 
                 // Open Redirect 防護：檢查 Origin 白名單（僅對 http/https 協議）
-                if (allowedOrigins.length > 0 && ['http:', 'https:'].includes(urlObj.protocol)) {
+                if (['http:', 'https:'].includes(urlObj.protocol)) {
                     // 預設允許當前網站的 origin
                     const defaultAllowed = [window.location.origin];
-                    const combinedAllowed = [...new Set([...defaultAllowed, ...allowedOrigins])];
+                    
+                    // 合併允許的來源：當前 origin + 傳入的 whitelist + 地圖與社群預設 whitelist
+                    const combinedAllowed = [...new Set([
+                        ...defaultAllowed, 
+                        ...allowedOrigins,
+                        ...ALLOWED_MAP_DOMAINS,
+                        ...ALLOWED_SOCIAL_DOMAINS
+                    ])];
                     
                     if (!combinedAllowed.includes(urlObj.origin)) {
                         this.logSecurityEvent('validateURL', 'Cross-origin URL blocked', { 
                             origin: urlObj.origin, 
-                            allowed: combinedAllowed 
+                            allowedCount: combinedAllowed.length 
                         });
                         return false;
                     }

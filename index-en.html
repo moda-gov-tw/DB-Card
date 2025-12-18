@@ -994,79 +994,86 @@
         }
 
         function processSocialLinks(text) {
+            if (!text || typeof text !== 'string') return '';
+            
             const lines = text.split('\n');
             const processedLines = lines.map(line => {
-                let processedLine = line;
+                const trimmed = line.trim();
+                if (!trimmed) return '';
                 
-                if (/^FB:/i.test(processedLine)) {
-                    processedLine = processedLine.replace(/FB:\s*(fb\.com\/[\w\.-]+|facebook\.com\/[\w\.-]+|@[\w\.-]+)/gi, function(match, url) {
-                        const cleanUrl = url.startsWith('@') ? `fb.com/${url.substring(1)}` : url;
-                        const fullUrl = cleanUrl.startsWith('http') ? cleanUrl : `https://${cleanUrl}`;
-                        return `FB: <a href="${fullUrl}" target="_blank" class="social-link">${url}</a>`;
-                    });
+                let label = trimmed;
+                let url = '';
+                let prefix = '';
+                
+                // Facebook
+                if (/^FB:/i.test(trimmed)) {
+                    prefix = 'FB: ';
+                    const raw = trimmed.replace(/^FB:\s*/i, '');
+                    url = raw.startsWith('@') ? `fb.com/${raw.substring(1)}` : raw;
+                    label = raw;
                 }
-                else if (/^IG:/i.test(processedLine)) {
-                    processedLine = processedLine.replace(/IG:\s*(instagram\.com\/[\w\.-]+|@[\w\.-]+)/gi, function(match, url) {
-                        const cleanUrl = url.startsWith('@') ? `instagram.com/${url.substring(1)}` : url;
-                        const fullUrl = cleanUrl.startsWith('http') ? cleanUrl : `https://${cleanUrl}`;
-                        return `IG: <a href="${fullUrl}" target="_blank" class="social-link">${url}</a>`;
-                    });
+                // Instagram
+                else if (/^IG:/i.test(trimmed)) {
+                    prefix = 'IG: ';
+                    const raw = trimmed.replace(/^IG:\s*/i, '');
+                    url = raw.startsWith('@') ? `instagram.com/${raw.substring(1)}` : raw;
+                    label = raw;
                 }
-                else if (/^LINE:/i.test(processedLine)) {
-                    processedLine = processedLine.replace(/LINE:\s*(@?[\w\.-]+|line\.me\/[\w\/-]+)/gi, function(match, url) {
-                        let fullUrl;
-                        if (url.startsWith('@')) {
-                            // Official account: @323foylw -> https://line.me/ti/p/~@323foylw
-                            fullUrl = `https://line.me/ti/p/~${url}`;
-                        } else if (url.startsWith('line.me')) {
-                            fullUrl = `https://${url}`;
-                        } else if (/^[\w\.-]+$/.test(url)) {
-                            // Personal account: tsgservice -> https://line.me/ti/p/~tsgservice
-                            fullUrl = `https://line.me/ti/p/~${url}`;
-                        } else {
-                            fullUrl = url.startsWith('http') ? url : `https://${url}`;
-                        }
-                        return `LINE: <a href="${fullUrl}" target="_blank" class="social-link">${url}</a>`;
-                    });
+                // LINE
+                else if (/^LINE:/i.test(trimmed)) {
+                    prefix = 'LINE: ';
+                    const raw = trimmed.replace(/^LINE:\s*/i, '');
+                    if (raw.startsWith('@')) {
+                        // Official account
+                        url = `https://line.me/ti/p/~${raw}`;
+                    } else if (raw.startsWith('line.me')) {
+                        url = raw;
+                    } else if (/^[\w\.-]+$/.test(raw)) {
+                        // Personal account
+                        url = `https://line.me/ti/p/~${raw}`;
+                    } else {
+                        url = raw;
+                    }
+                    label = raw;
                 }
-                else if (/^GitHub:/i.test(processedLine)) {
-                    processedLine = processedLine.replace(/GitHub:\s*(github\.com\/[\w\.-\/]+|@[\w\.-]+)/gi, function(match, url) {
-                        const cleanUrl = url.startsWith('@') ? `github.com/${url.substring(1)}` : url;
-                        const fullUrl = cleanUrl.startsWith('http') ? cleanUrl : `https://${cleanUrl}`;
-                        return `GitHub: <a href="${fullUrl}" target="_blank" class="social-link">${url}</a>`;
-                    });
+                // GitHub
+                else if (/^GitHub:/i.test(trimmed)) {
+                    prefix = 'GitHub: ';
+                    const raw = trimmed.replace(/^GitHub:\s*/i, '');
+                    url = raw.startsWith('@') ? `github.com/${raw.substring(1)}` : raw;
+                    label = raw;
                 }
-                else if (/^(Twitter|X):/i.test(processedLine)) {
-                    processedLine = processedLine.replace(/(Twitter|X):\s*(twitter\.com\/[\w\.-]+|x\.com\/[\w\.-]+|@[\w\.-]+)/gi, function(match, platform, url) {
-                        const cleanUrl = url.startsWith('@') ? `x.com/${url.substring(1)}` : url;
-                        const fullUrl = cleanUrl.startsWith('http') ? cleanUrl : `https://${cleanUrl}`;
-                        return `${platform}: <a href="${fullUrl}" target="_blank" class="social-link">${url}</a>`;
-                    });
+                // LinkedIn
+                else if (/^LinkedIn:/i.test(trimmed)) {
+                    prefix = 'LinkedIn: ';
+                    const raw = trimmed.replace(/^LinkedIn:\s*/i, '');
+                    url = raw.startsWith('@') ? `linkedin.com/in/${raw.substring(1)}` : raw;
+                    label = raw;
                 }
-                else if (/^LinkedIn:/i.test(processedLine)) {
-                    processedLine = processedLine.replace(/LinkedIn:\s*(linkedin\.com\/[\w\/-]+|@[\w\.-]+)/gi, function(match, url) {
-                        const cleanUrl = url.startsWith('@') ? `linkedin.com/in/${url.substring(1)}` : url;
-                        const fullUrl = cleanUrl.startsWith('http') ? cleanUrl : `https://${cleanUrl}`;
-                        return `LinkedIn: <a href="${fullUrl}" target="_blank" class="social-link">${url}</a>`;
-                    });
-                }
-                else if (/^YouTube:/i.test(processedLine)) {
-                    processedLine = processedLine.replace(/YouTube:\s*(youtube\.com\/[\w\/@-]+|youtu\.be\/[\w-]+|@[\w\.-]+)/gi, function(match, url) {
-                        const cleanUrl = url.startsWith('@') ? `youtube.com/${url}` : url;
-                        const fullUrl = cleanUrl.startsWith('http') ? cleanUrl : `https://${cleanUrl}`;
-                        return `YouTube: <a href="${fullUrl}" target="_blank" class="social-link">${url}</a>`;
-                    });
-                }
-                else if (/^https?:\/\//i.test(processedLine)) {
-                    processedLine = processedLine.replace(/(https?:\/\/[\w\.-]+(?:\.[\w]{2,})+(?:\/[\w\.-\/\?#&=]*)?)/gi, function(match, url) {
-                        return `<a href="${url}" target="_blank" class="social-link">${url}</a>`;
-                    });
+                // General URL
+                else if (/^https?:\/\//i.test(trimmed)) {
+                    url = trimmed;
+                    label = trimmed;
                 }
                 
-                return processedLine;
+                if (url) {
+                    if (!url.startsWith('http') && !url.startsWith('mailto:') && !url.startsWith('tel:')) {
+                        url = 'https://' + url;
+                    }
+                    
+                    // Validate URL
+                    if (SecurityUtils.validateURL(url)) {
+                        // Escape label for XSS prevention
+                        const safeLabel = SecurityUtils.sanitizeInput(label, 'text');
+                        return `${prefix}<a href="${url}" target="_blank" rel="noopener noreferrer" class="social-link">${safeLabel}</a>`;
+                    }
+                }
+                
+                // Return sanitized plain text if validation fails or not a link
+                return SecurityUtils.sanitizeInput(trimmed, 'text');
             });
             
-            return processedLines.join('\n');
+            return processedLines.filter(line => line !== '').join('\n');
         }
 
         window.addEventListener('load', function() {

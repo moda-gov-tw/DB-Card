@@ -244,6 +244,23 @@ const updateAvatar = (avatarUrl) => {
 
     const safeDataUrlPattern = /^data:image\/(png|jpe?g|gif|webp);base64,/i;
     if (safeDataUrlPattern.test(trimmedUrl)) {
+        // Additional security checks for data URLs
+        if (trimmedUrl.length > 2097152) { // 2MB limit
+            console.warn('Data URL too large, blocked for security');
+            avatar.removeAttribute('src');
+            avatar.style.display = 'none';
+            return;
+        }
+        
+        // Validate base64 content after header
+        const base64Part = trimmedUrl.split(',')[1];
+        if (!base64Part || !/^[A-Za-z0-9+/]*={0,2}$/.test(base64Part)) {
+            console.warn('Invalid base64 data URL, blocked');
+            avatar.removeAttribute('src');
+            avatar.style.display = 'none';
+            return;
+        }
+        
         avatar.setAttribute('src', trimmedUrl);
         avatar.style.display = 'block';
         avatar.onerror = function() {
@@ -1037,34 +1054,9 @@ function createSocialElement(platform, url, buttonText, brandColor, displayUrl =
     
     // 安全URL驗證 - 修補Open Redirect弱點
     // 社群媒體連結需要允許外部域名
-    const allowedSocialOrigins = [
-        'https://facebook.com',
-        'https://www.facebook.com',
-        'https://m.facebook.com',
-        'https://fb.com',
-        'https://www.fb.com',
-        'https://instagram.com',
-        'https://www.instagram.com',
-        'https://m.instagram.com',
-        'https://line.me',
-        'https://github.com',
-        'https://www.github.com',
-        'https://twitter.com',
-        'https://www.twitter.com',
-        'https://m.twitter.com',
-        'https://x.com',
-        'https://www.x.com',
-        'https://linkedin.com',
-        'https://www.linkedin.com',
-        'https://m.linkedin.com',
-        'https://youtube.com',
-        'https://www.youtube.com',
-        'https://m.youtube.com',
-        'https://youtu.be',
-        'https://discord.gg',
-        'https://discord.com',
-        'https://www.discord.com'
-    ];
+    const allowedSocialOrigins = (typeof SecurityUtils !== 'undefined' && SecurityUtils.ALLOWED_SOCIAL_DOMAINS) 
+        ? SecurityUtils.ALLOWED_SOCIAL_DOMAINS 
+        : [];
     
     if (typeof SecurityUtils !== 'undefined' && SecurityUtils.validateURL(url, allowedSocialOrigins)) {
         SecurityUtils.setSecureAttribute(link, 'href', url, allowedSocialOrigins);

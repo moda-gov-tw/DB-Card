@@ -114,3 +114,16 @@
 
 **驗收標準**: ✅ 三版本一致性、✅ 視覺層次清晰、✅ 響應式相容
 **回滾方案**: .bak 備份檔案或 git revert
+
+## 2025-12-19 CodeQL 安全修復完成 [CLOSED]
+**決策**: 修復 3 個 CodeQL js/client-side-unvalidated-url-redirection 漏洞
+**狀態**: CLOSED
+**影響檔案**: index-personal.html, index-personal-en.html, assets/bilingual-common.js
+**關鍵變更**:
+- index-personal.html:764 - 新增地圖 URL fallback 驗證
+- index-personal-en.html:764 - 同步英文版安全修復
+- assets/bilingual-common.js:247 - 強化 data URL 驗證 (2MB限制+base64檢查)
+- assets/security-utils.js - 擴充 ALLOWED_SOCIAL_DOMAINS 白名單
+
+**驗收標準**: ✅ CodeQL 漏洞修復、✅ 功能不受影響、✅ 安全性提升
+**回滾方案**: git checkout HEAD 還原修改檔案

@@ -1016,6 +1016,14 @@
 
         function previewCard() {
             if (generatedUrl) {
+                // 驗證 URL 安全性，防止 Open Redirect
+                if (typeof SecurityUtils !== 'undefined' && typeof SecurityUtils.validateURL === 'function') {
+                    if (!SecurityUtils.validateURL(generatedUrl)) {
+                        alert('產生的連結無效或不安全，無法預覽。');
+                        return;
+                    }
+                }
+                
                 const previewWindow = window.open(generatedUrl, '_blank', 'noopener,noreferrer');
                 if (previewWindow) {
                     previewWindow.opener = null;
